@@ -1,0 +1,268 @@
+{% comment %}
+  Digital Store Theme — Product Card Snippet
+  Usage: {% render 'product-card', product: product %}
+{% endcomment %}
+
+{% assign card_product = product %}
+
+<article class="product-card glass-card card-glow-edge" data-product-id="{{ card_product.id }}">
+
+  <!-- Image -->
+  <div class="product-card-media">
+    <a href="{{ card_product.url }}" class="product-card-img-link" aria-label="{{ card_product.name }}">
+      {% if card_product.thumbnail != blank %}
+        <img
+          src="{{ card_product.thumbnail | img_url: '600x400', crop: 'center' }}"
+          alt="{{ card_product.name }}"
+          loading="lazy"
+          width="600"
+          height="400"
+          class="product-card-img"
+        >
+      {% else %}
+        <div class="product-card-img-placeholder">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </div>
+      {% endif %}
+
+      <!-- Overlay on hover -->
+      <div class="product-card-overlay">
+        <span class="overlay-cta">عرض المنتج</span>
+      </div>
+    </a>
+
+    <!-- Badges -->
+    <div class="product-card-badges">
+      {% if card_product.is_new %}
+        <span class="badge badge-info">جديد</span>
+      {% endif %}
+      {% if card_product.sale_price %}
+        {% assign discount = card_product.price | minus: card_product.sale_price | times: 100 | divided_by: card_product.price %}
+        <span class="badge badge-success">-{{ discount }}%</span>
+      {% endif %}
+      {% if card_product.is_bestseller %}
+        <span class="badge badge-primary">الأكثر مبيعاً</span>
+      {% endif %}
+    </div>
+
+    <!-- Instant download badge -->
+    <div class="product-card-type">
+      <span class="badge-glow" style="font-size:0.65rem; padding: 3px 10px;">
+        <span class="dot"></span> رقمي
+      </span>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="product-card-actions">
+      <salla-add-product-button
+        product-id="{{ card_product.id }}"
+        class="btn btn-glow btn-sm product-add-btn"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        أضف للسلة
+      </salla-add-product-button>
+    </div>
+  </div>
+
+  <!-- Info -->
+  <div class="product-card-info">
+
+    <!-- Category -->
+    {% if card_product.categories.first %}
+      <a href="{{ card_product.categories.first.url }}" class="product-card-category">
+        {{ card_product.categories.first.name }}
+      </a>
+    {% endif %}
+
+    <!-- Title -->
+    <h3 class="product-card-title">
+      <a href="{{ card_product.url }}">{{ card_product.name }}</a>
+    </h3>
+
+    <!-- Rating -->
+    {% if card_product.rating %}
+    <div class="product-card-rating">
+      <div class="stars" aria-label="تقييم {{ card_product.rating }} من 5">
+        {% for i in (1..5) %}
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            {% if i <= card_product.rating %}
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+            {% else %}
+              <path fill="rgba(255,255,255,0.1)" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+            {% endif %}
+          </svg>
+        {% endfor %}
+      </div>
+      {% if card_product.reviews_count %}
+        <span class="product-card-reviews">({{ card_product.reviews_count }})</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Price -->
+    <div class="price-tag product-card-price">
+      {% if card_product.sale_price %}
+        <span class="price-current">{{ card_product.sale_price | money }}</span>
+        <span class="price-original">{{ card_product.price | money }}</span>
+      {% else %}
+        <span class="price-current">{{ card_product.price | money }}</span>
+      {% endif %}
+    </div>
+
+  </div>
+</article>
+
+<style>
+.product-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all var(--transition-slow);
+}
+
+.product-card:hover {
+  transform: translateY(-6px) scale(1.01);
+}
+
+/* Media */
+.product-card-media {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  aspect-ratio: 16/10;
+  background: var(--color-bg-elevated);
+}
+
+.product-card-img-link { display: block; width: 100%; height: 100%; }
+
+.product-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.product-card:hover .product-card-img { transform: scale(1.06); }
+
+.product-card-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+/* Overlay */
+.product-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10,10,15,0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.product-card:hover .product-card-overlay { opacity: 1; }
+
+.overlay-cta {
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border: 2px solid rgba(255,255,255,0.6);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(8px);
+}
+
+/* Badges */
+.product-card-badges {
+  position: absolute;
+  top: var(--space-3);
+  inset-inline-start: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.product-card-type {
+  position: absolute;
+  top: var(--space-3);
+  inset-inline-end: var(--space-3);
+}
+
+/* Quick actions */
+.product-card-actions {
+  position: absolute;
+  bottom: var(--space-3);
+  inset-inline: var(--space-3);
+  transform: translateY(12px);
+  opacity: 0;
+  transition: all var(--transition-base);
+}
+
+.product-card:hover .product-card-actions {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.product-add-btn { width: 100%; }
+
+/* Info */
+.product-card-info {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.product-card-category {
+  font-size: var(--font-size-xs);
+  color: var(--color-purple-light);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: color var(--transition-fast);
+}
+
+.product-card-category:hover { color: var(--color-blue-light); }
+
+.product-card-title {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.product-card-title a {
+  color: var(--color-text-primary);
+  transition: color var(--transition-fast);
+}
+
+.product-card-title a:hover { color: var(--color-purple-light); }
+
+.product-card-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.product-card-reviews {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.product-card-price { margin-top: auto; padding-top: var(--space-2); }
+.product-card-price .price-current { font-size: var(--font-size-xl); }
+</style>

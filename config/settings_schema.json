@@ -1,0 +1,278 @@
+[
+  {
+    "name": "الألوان",
+    "settings": [
+      {
+        "type": "color",
+        "id": "color_bg_primary",
+        "label": "لون الخلفية الرئيسية",
+        "default": "#0A0A0F"
+      },
+      {
+        "type": "color",
+        "id": "color_bg_secondary",
+        "label": "لون الخلفية الثانوية",
+        "default": "#0F0F1A"
+      },
+      {
+        "type": "color",
+        "id": "color_purple",
+        "label": "اللون البنفسجي",
+        "default": "#7C3AED"
+      },
+      {
+        "type": "color",
+        "id": "color_blue",
+        "label": "اللون الأزرق",
+        "default": "#3B82F6"
+      },
+      {
+        "type": "color",
+        "id": "color_text_primary",
+        "label": "لون النص الرئيسي",
+        "default": "#FFFFFF"
+      },
+      {
+        "type": "color",
+        "id": "color_text_secondary",
+        "label": "لون النص الثانوي",
+        "default": "#A0A0B8"
+      }
+    ]
+  },
+  {
+    "name": "الخطوط",
+    "settings": [
+      {
+        "type": "select",
+        "id": "font_arabic",
+        "label": "الخط العربي",
+        "options": [
+          { "value": "Tajawal", "label": "Tajawal" },
+          { "value": "Cairo",   "label": "Cairo" },
+          { "value": "Almarai", "label": "Almarai" },
+          { "value": "IBM Plex Sans Arabic", "label": "IBM Plex Sans Arabic" }
+        ],
+        "default": "Tajawal"
+      },
+      {
+        "type": "select",
+        "id": "font_latin",
+        "label": "الخط الإنجليزي",
+        "options": [
+          { "value": "Inter",   "label": "Inter" },
+          { "value": "Poppins", "label": "Poppins" },
+          { "value": "Outfit",  "label": "Outfit" }
+        ],
+        "default": "Inter"
+      }
+    ]
+  },
+  {
+    "name": "الهيدر",
+    "settings": [
+      {
+        "type": "image_picker",
+        "id": "logo",
+        "label": "شعار المتجر"
+      },
+      {
+        "type": "image_picker",
+        "id": "logo_dark",
+        "label": "شعار المتجر (نسخة فاتحة)"
+      },
+      {
+        "type": "checkbox",
+        "id": "sticky_header",
+        "label": "هيدر ثابت عند التمرير",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "show_search",
+        "label": "إظهار أيقونة البحث",
+        "default": true
+      }
+    ]
+  },
+  {
+    "name": "الصفحة الرئيسية — إحصائيات",
+    "settings": [
+      {
+        "type": "text",
+        "id": "stat_1_number",
+        "label": "الرقم الأول",
+        "default": "5000"
+      },
+      {
+        "type": "text",
+        "id": "stat_1_label",
+        "label": "وصف الرقم الأول",
+        "default": "عميل سعيد"
+      },
+      {
+        "type": "text",
+        "id": "stat_2_number",
+        "label": "الرقم الثاني",
+        "default": "200"
+      },
+      {
+        "type": "text",
+        "id": "stat_2_label",
+        "label": "وصف الرقم الثاني",
+        "default": "منتج رقمي"
+      },
+      {
+        "type": "text",
+        "id": "stat_3_number",
+        "label": "الرقم الثالث",
+        "default": "99"
+      },
+      {
+        "type": "text",
+        "id": "stat_3_label",
+        "label": "وصف الرقم الثالث",
+        "default": "% رضا العملاء"
+      },
+      {
+        "type": "text",
+        "id": "stat_4_number",
+        "label": "الرقم الرابع",
+        "default": "24"
+      },
+      {
+        "type": "text",
+        "id": "stat_4_label",
+        "label": "وصف الرقم الرابع",
+        "default": "/7 دعم فني"
+      }
+    ]
+  },
+  {
+    "name": "الفوتر",
+    "settings": [
+      {
+        "type": "textarea",
+        "id": "footer_description",
+        "label": "وصف المتجر في الفوتر",
+        "default": "متجرك الرقمي الأول للمنتجات والحلول الإبداعية الاحترافية."
+      },
+      {
+        "type": "header",
+        "content": "روابط التواصل الاجتماعي"
+      },
+      {
+        "type": "url",
+        "id": "social_twitter",
+        "label": "رابط تويتر / X"
+      },
+      {
+        "type": "url",
+        "id": "social_instagram",
+        "label": "رابط انستغرام"
+      },
+      {
+        "type": "url",
+        "id": "social_snapchat",
+        "label": "رابط سناب شات"
+      },
+      {
+        "type": "url",
+        "id": "social_tiktok",
+        "label": "رابط تيك توك"
+      },
+      {
+        "type": "url",
+        "id": "social_youtube",
+        "label": "رابط يوتيوب"
+      }
+    ]
+  },
+  {
+    "name": "صفحة المنتج",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "show_includes",
+        "label": "إظهار قسم 'ماذا يحتوي المنتج'",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "show_related",
+        "label": "إظهار المنتجات المشابهة",
+        "default": true
+      },
+      {
+        "type": "range",
+        "id": "related_count",
+        "label": "عدد المنتجات المشابهة",
+        "min": 2,
+        "max": 8,
+        "step": 1,
+        "default": 4
+      }
+    ]
+  },
+  {
+    "name": "الأنيميشن والتأثيرات",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "enable_particles",
+        "label": "تفعيل تأثير الجزيئات في Hero",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_glassmorphism",
+        "label": "تفعيل تأثير Glassmorphism",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_glow",
+        "label": "تفعيل تأثير التوهج",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_animations",
+        "label": "تفعيل الأنيميشن عند التمرير",
+        "default": true
+      },
+      {
+        "type": "select",
+        "id": "animation_speed",
+        "label": "سرعة الأنيميشن",
+        "options": [
+          { "value": "fast",   "label": "سريع" },
+          { "value": "normal", "label": "عادي" },
+          { "value": "slow",   "label": "بطيء" }
+        ],
+        "default": "normal"
+      }
+    ]
+  },
+  {
+    "name": "SEO والتحليلات",
+    "settings": [
+      {
+        "type": "text",
+        "id": "meta_title_suffix",
+        "label": "لاحقة عنوان الصفحة",
+        "default": "Digital Store"
+      },
+      {
+        "type": "image_picker",
+        "id": "og_image",
+        "label": "صورة المشاركة الاجتماعية"
+      },
+      {
+        "type": "text",
+        "id": "gtm_id",
+        "label": "معرف Google Tag Manager (GTM-XXXXXX)"
+      }
+    ]
+  }
+]

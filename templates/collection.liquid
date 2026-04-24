@@ -1,0 +1,469 @@
+{% comment %}
+  Digital Store Theme — Collection / Category Page
+  AJAX filtering, Grid/List toggle, Flip hover cards
+{% endcomment %}
+
+<!DOCTYPE html>
+<html lang="{{ locale }}" dir="{{ locale | dir | default: 'rtl' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ collection.name }} — {{ store.name }}</title>
+  <meta name="description" content="{{ collection.description | default: store.description | strip_html | truncate: 160 }}">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="{{ 'theme.css' | asset_url }}">
+  <link rel="stylesheet" href="{{ 'glassmorphism.css' | asset_url }}">
+  <link rel="stylesheet" href="{{ 'neon.css' | asset_url }}">
+
+  {{ content_for_header }}
+</head>
+<body class="collection-page">
+
+  <!-- Header -->
+  <header class="site-header scrolled" id="site-header" role="banner">
+    <div class="container header-inner">
+      <a href="/" class="site-logo" aria-label="{{ store.name }}">
+        {% if store.logo %}
+          <img src="{{ store.logo | img_url: '200x' }}" alt="{{ store.name }}" width="140" height="44">
+        {% else %}
+          <span class="text-gradient fw-black" style="font-size:1.5rem;">{{ store.name }}</span>
+        {% endif %}
+      </a>
+      <nav class="site-nav" role="navigation">
+        {% for link in linklists.main-menu.links %}
+          <a href="{{ link.url }}" {% if link.active %}aria-current="page"{% endif %}>{{ link.title }}</a>
+        {% endfor %}
+      </nav>
+      <div class="header-actions">
+        <salla-search></salla-search>
+        <salla-cart-icon></salla-cart-icon>
+        <salla-user-menu></salla-user-menu>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content" role="main" style="padding-top:80px;">
+
+    <!-- Collection Hero -->
+    <section class="collection-hero bg-animated-gradient">
+      <div class="blob blob-purple" style="top:-100px;inset-inline-start:-50px;opacity:0.4;" aria-hidden="true"></div>
+      <div class="container" style="position:relative;z-index:1;padding-block:var(--space-12);text-align:center;">
+
+        <nav class="breadcrumb" style="justify-content:center;" aria-label="مسار التنقل">
+          <a href="/">الرئيسية</a>
+          <span class="breadcrumb-sep">/</span>
+          <span aria-current="page">{{ collection.name }}</span>
+        </nav>
+
+        <h1 style="margin-top:var(--space-4);" data-animate="up">
+          {{ collection.name }}
+        </h1>
+        {% if collection.description %}
+          <p style="max-width:600px;margin:var(--space-4) auto 0;" data-animate="up" data-delay="100">
+            {{ collection.description | strip_html | truncate: 200 }}
+          </p>
+        {% endif %}
+
+        <div class="collection-meta" data-animate="up" data-delay="200">
+          <span class="badge badge-primary">{{ collection.products_count }} منتج</span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== COLLECTION BODY ===== -->
+    <section class="section-sm">
+      <div class="container">
+        <div class="collection-layout">
+
+          <!-- ---- SIDEBAR FILTERS ---- -->
+          <aside class="collection-sidebar glass-card" id="filters-sidebar" role="complementary" aria-label="خيارات الفلترة">
+
+            <div class="sidebar-header">
+              <h2 style="font-size:var(--font-size-lg);">الفلترة</h2>
+              <button class="btn btn-ghost btn-sm" id="clear-filters" aria-label="مسح الفلاتر">مسح الكل</button>
+            </div>
+
+            <!-- Price Filter -->
+            <div class="filter-group">
+              <h3 class="filter-title">السعر</h3>
+              <div class="price-range">
+                <div class="price-range-inputs">
+                  <label class="sr-only" for="price-min">الحد الأدنى</label>
+                  <input type="number" id="price-min" class="input-glass" placeholder="0" min="0" aria-label="السعر الأدنى">
+                  <span style="color:var(--color-text-muted);">—</span>
+                  <label class="sr-only" for="price-max">الحد الأقصى</label>
+                  <input type="number" id="price-max" class="input-glass" placeholder="أقصى" min="0" aria-label="السعر الأقصى">
+                </div>
+              </div>
+            </div>
+
+            <!-- Category Filter -->
+            {% if collections.size > 0 %}
+            <div class="filter-group">
+              <h3 class="filter-title">التصنيف</h3>
+              <ul class="filter-list" role="list">
+                <li>
+                  <label class="filter-option">
+                    <input type="radio" name="category" value="all" checked>
+                    <span>جميع التصنيفات</span>
+                    <span class="filter-count">{{ collections.all.products_count }}</span>
+                  </label>
+                </li>
+                {% for cat in collections %}
+                  <li>
+                    <label class="filter-option">
+                      <input type="radio" name="category" value="{{ cat.handle }}">
+                      <span>{{ cat.name }}</span>
+                      <span class="filter-count">{{ cat.products_count }}</span>
+                    </label>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% endif %}
+
+            <!-- Sort Filter -->
+            <div class="filter-group">
+              <h3 class="filter-title">الترتيب</h3>
+              <div class="select-wrapper">
+                <select id="sort-select" class="input-glass" aria-label="ترتيب المنتجات">
+                  <option value="created_at-desc">الأحدث أولاً</option>
+                  <option value="created_at-asc">الأقدم أولاً</option>
+                  <option value="price-asc">السعر: من الأقل</option>
+                  <option value="price-desc">السعر: من الأعلى</option>
+                  <option value="rating-desc">الأعلى تقييماً</option>
+                  <option value="sales-desc">الأكثر مبيعاً</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Apply button (mobile) -->
+            <button class="btn btn-primary w-full" id="apply-filters" style="margin-top:var(--space-4);">
+              تطبيق الفلاتر
+            </button>
+
+          </aside>
+
+          <!-- ---- PRODUCTS AREA ---- -->
+          <div class="collection-main">
+
+            <!-- Toolbar -->
+            <div class="collection-toolbar">
+              <p class="results-count" aria-live="polite">
+                عرض <strong id="products-shown">{{ collection.products.size }}</strong> منتج
+              </p>
+
+              <div class="toolbar-actions">
+                <!-- Mobile filter toggle -->
+                <button class="btn btn-ghost btn-sm filter-toggle-btn" id="filter-toggle" aria-expanded="false" aria-controls="filters-sidebar">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="4" y1="6" x2="11" y2="6"/><line x1="4" y1="12" x2="16" y2="12"/><line x1="4" y1="18" x2="11" y2="18"/>
+                    <circle cx="14" cy="6" r="3"/><circle cx="19" cy="12" r="3"/><circle cx="14" cy="18" r="3"/>
+                  </svg>
+                  فلترة
+                </button>
+
+                <!-- View Toggle -->
+                <div class="view-toggle tabs-glass" role="group" aria-label="طريقة العرض">
+                  <button class="tab-btn active view-btn" data-view="grid" aria-label="عرض شبكي" aria-pressed="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                      <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                    </svg>
+                  </button>
+                  <button class="tab-btn view-btn" data-view="list" aria-label="عرض قائمة" aria-pressed="false">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                      <line x1="3" y1="6"  x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Loading overlay -->
+            <div class="loading-overlay" id="loading-overlay" aria-live="polite" aria-label="جاري التحميل" hidden>
+              <div class="loading-spinner" aria-hidden="true"></div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="products-grid-container grid-view" id="products-container" role="list">
+              {% for product in collection.products %}
+                <div class="product-item" data-animate="up" data-delay="{{ forloop.index | times: 50 | at_most: 300 }}" role="listitem">
+                  {% render 'product-card', product: product %}
+                </div>
+              {% else %}
+                <div class="empty-state glass-card text-center" style="grid-column:1/-1;padding:var(--space-16);">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(124,58,237,0.4)" stroke-width="1.5" style="margin:0 auto var(--space-4);" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <h3>لا توجد منتجات</h3>
+                  <p>لم يتم العثور على منتجات تطابق معايير البحث</p>
+                  <button class="btn btn-ghost" id="reset-search" style="margin-top:var(--space-4);">إعادة تعيين</button>
+                </div>
+              {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if paginate.pages > 1 %}
+            <div class="pagination" role="navigation" aria-label="التنقل بين الصفحات">
+              {% if paginate.previous %}
+                <a href="{{ paginate.previous.url }}" class="page-btn" aria-label="الصفحة السابقة">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+                </a>
+              {% endif %}
+
+              {% for part in paginate.parts %}
+                {% if part.is_link %}
+                  <a href="{{ part.url }}" class="page-btn" aria-label="الصفحة {{ part.title }}">{{ part.title }}</a>
+                {% elsif part.title == paginate.current_page %}
+                  <span class="page-btn active" aria-current="page" aria-label="الصفحة الحالية {{ part.title }}">{{ part.title }}</span>
+                {% else %}
+                  <span class="page-btn disabled" aria-hidden="true">{{ part.title }}</span>
+                {% endif %}
+              {% endfor %}
+
+              {% if paginate.next %}
+                <a href="{{ paginate.next.url }}" class="page-btn" aria-label="الصفحة التالية">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                </a>
+              {% endif %}
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-bottom" style="border-top:none; padding-top:0;">
+        <p>© {{ 'now' | date: '%Y' }} {{ store.name }}. جميع الحقوق محفوظة.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Collection Styles -->
+  <style>
+  .collection-hero {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .collection-meta { margin-top: var(--space-4); }
+
+  .collection-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: var(--space-8);
+    align-items: start;
+  }
+
+  /* Sidebar */
+  .collection-sidebar { padding: var(--space-6); position: sticky; top: 100px; }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .filter-group { margin-bottom: var(--space-6); padding-bottom: var(--space-6); border-bottom: 1px solid var(--color-border-light); }
+  .filter-group:last-of-type { border-bottom: none; margin-bottom: 0; }
+
+  .filter-title { font-size: var(--font-size-sm); font-weight: 700; margin-bottom: var(--space-3); color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  .filter-list { display: flex; flex-direction: column; gap: var(--space-2); }
+
+  .filter-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    transition: color var(--transition-fast);
+    padding: var(--space-1) 0;
+  }
+
+  .filter-option:hover { color: var(--color-text-primary); }
+
+  .filter-option input[type="radio"] {
+    accent-color: var(--color-purple);
+    width: 16px; height: 16px;
+  }
+
+  .filter-count {
+    margin-inline-start: auto;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    background: rgba(255,255,255,0.05);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+  }
+
+  .price-range-inputs { display: flex; align-items: center; gap: var(--space-2); }
+  .price-range-inputs .input-glass { padding: var(--space-2) var(--space-3); }
+
+  .select-wrapper { position: relative; }
+  .select-wrapper select { appearance: none; cursor: pointer; padding-inline-end: var(--space-8); }
+  .select-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 50%; inset-inline-end: var(--space-3);
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  /* Toolbar */
+  .collection-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-6);
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  .results-count { font-size: var(--font-size-sm); color: var(--color-text-muted); }
+  .results-count strong { color: var(--color-text-primary); }
+
+  .toolbar-actions { display: flex; align-items: center; gap: var(--space-3); }
+  .filter-toggle-btn { display: none; }
+
+  /* Products containers */
+  .products-grid-container {
+    transition: opacity 0.3s ease;
+    position: relative;
+    min-height: 200px;
+  }
+
+  .products-grid-container.grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-5);
+  }
+
+  .products-grid-container.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .products-grid-container.list-view .product-card {
+    flex-direction: row;
+  }
+
+  .products-grid-container.list-view .product-card-media {
+    width: 200px;
+    flex-shrink: 0;
+    aspect-ratio: auto;
+    height: 150px;
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  }
+
+  /* Loading */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,10,15,0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xl);
+    z-index: 10;
+  }
+
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(124,58,237,0.2);
+    border-top-color: var(--color-purple);
+    border-radius: 50%;
+    animation: rotate360 0.8s linear infinite;
+  }
+
+  /* Pagination */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    margin-top: var(--space-10);
+    flex-wrap: wrap;
+  }
+
+  .page-btn {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+  }
+
+  .page-btn:hover { border-color: var(--color-purple); color: var(--color-purple-light); }
+  .page-btn.active { background: var(--color-accent-gradient); color: #fff; border-color: transparent; box-shadow: var(--shadow-purple); }
+  .page-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+  /* Breadcrumb */
+  .breadcrumb { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm); color: var(--color-text-muted); flex-wrap: wrap; }
+  .breadcrumb a { color: var(--color-text-muted); transition: color var(--transition-fast); }
+  .breadcrumb a:hover { color: var(--color-purple-light); }
+  .breadcrumb-sep { color: var(--color-border); }
+
+  @media (max-width: 1024px) {
+    .collection-layout { grid-template-columns: 240px 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .collection-layout { grid-template-columns: 1fr; }
+
+    .collection-sidebar {
+      position: fixed;
+      inset-inline-start: 0;
+      top: 0;
+      bottom: 0;
+      width: 300px;
+      z-index: var(--z-overlay);
+      transform: translateX(100%);
+      transition: transform var(--transition-base);
+      overflow-y: auto;
+      border-radius: 0 var(--radius-2xl) var(--radius-2xl) 0;
+    }
+
+    [dir="rtl"] .collection-sidebar { transform: translateX(-100%); }
+
+    .collection-sidebar.open { transform: translateX(0); }
+
+    .filter-toggle-btn { display: flex; }
+    .products-grid-container.grid-view { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 480px) {
+    .products-grid-container.grid-view { grid-template-columns: 1fr; }
+    .products-grid-container.list-view .product-card { flex-direction: column; }
+    .products-grid-container.list-view .product-card-media { width: 100%; height: auto; aspect-ratio: 16/9; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  }
+  </style>
+
+  <script src="{{ 'theme.js' | asset_url }}" defer></script>
+  {{ content_for_layout }}
+
+</body>
+</html>

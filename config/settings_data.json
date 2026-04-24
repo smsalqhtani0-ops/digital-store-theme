@@ -1,0 +1,46 @@
+{
+  "current": {
+    "color_bg_primary":     "#0A0A0F",
+    "color_bg_secondary":   "#0F0F1A",
+    "color_purple":         "#7C3AED",
+    "color_blue":           "#3B82F6",
+    "color_text_primary":   "#FFFFFF",
+    "color_text_secondary": "#A0A0B8",
+
+    "font_arabic": "Tajawal",
+    "font_latin":  "Inter",
+
+    "sticky_header": true,
+    "show_search":   true,
+
+    "stat_1_number": "5000",
+    "stat_1_label":  "عميل سعيد",
+    "stat_2_number": "200",
+    "stat_2_label":  "منتج رقمي",
+    "stat_3_number": "99",
+    "stat_3_label":  "% رضا العملاء",
+    "stat_4_number": "24",
+    "stat_4_label":  "/7 دعم فني",
+
+    "footer_description": "متجرك الرقمي الأول للمنتجات والحلول الإبداعية الاحترافية.",
+
+    "social_twitter":   "",
+    "social_instagram": "",
+    "social_snapchat":  "",
+    "social_tiktok":    "",
+    "social_youtube":   "",
+
+    "show_includes":    true,
+    "show_related":     true,
+    "related_count":    4,
+
+    "enable_particles":     true,
+    "enable_glassmorphism": true,
+    "enable_glow":          true,
+    "enable_animations":    true,
+    "animation_speed":      "normal",
+
+    "meta_title_suffix": "Digital Store",
+    "gtm_id":            ""
+  }
+}

@@ -1,0 +1,534 @@
+{% comment %}
+  Digital Store Theme — Product Page Template
+  Salla Twilight | Digital products optimized
+{% endcomment %}
+
+<!DOCTYPE html>
+<html lang="{{ locale }}" dir="{{ locale | dir | default: 'rtl' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ product.name }} — {{ store.name }}</title>
+  <meta name="description" content="{{ product.description | strip_html | truncate: 160 }}">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="{{ 'theme.css' | asset_url }}">
+  <link rel="stylesheet" href="{{ 'glassmorphism.css' | asset_url }}">
+  <link rel="stylesheet" href="{{ 'neon.css' | asset_url }}">
+
+  {{ content_for_header }}
+</head>
+<body class="product-page">
+
+  <!-- Header -->
+  <header class="site-header scrolled" id="site-header" role="banner">
+    <div class="container header-inner">
+      <a href="/" class="site-logo" aria-label="{{ store.name }}">
+        {% if store.logo %}
+          <img src="{{ store.logo | img_url: '200x' }}" alt="{{ store.name }}" width="140" height="44">
+        {% else %}
+          <span class="text-gradient fw-black" style="font-size:1.5rem;">{{ store.name }}</span>
+        {% endif %}
+      </a>
+      <nav class="site-nav" role="navigation">
+        {% for link in linklists.main-menu.links %}
+          <a href="{{ link.url }}" {% if link.active %}aria-current="page"{% endif %}>{{ link.title }}</a>
+        {% endfor %}
+      </nav>
+      <div class="header-actions">
+        <salla-search></salla-search>
+        <salla-cart-icon></salla-cart-icon>
+        <salla-user-menu></salla-user-menu>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content" role="main" style="padding-top:80px;">
+
+    <!-- Breadcrumb -->
+    <div class="container" style="padding-block:var(--space-4);">
+      <nav class="breadcrumb" aria-label="مسار التنقل">
+        <a href="/">الرئيسية</a>
+        <span class="breadcrumb-sep" aria-hidden="true">/</span>
+        {% if product.categories.first %}
+          <a href="{{ product.categories.first.url }}">{{ product.categories.first.name }}</a>
+          <span class="breadcrumb-sep" aria-hidden="true">/</span>
+        {% endif %}
+        <span aria-current="page">{{ product.name }}</span>
+      </nav>
+    </div>
+
+    <!-- ===== PRODUCT MAIN ===== -->
+    <section class="product-main section-sm">
+      <div class="container">
+        <div class="product-layout">
+
+          <!-- LEFT: Media -->
+          <div class="product-media" data-animate="right">
+            <div class="product-image-main glass">
+              {% if product.images.size > 0 %}
+                <img
+                  src="{{ product.images.first | img_url: '800x600', crop: 'center' }}"
+                  alt="{{ product.name }}"
+                  id="product-main-img"
+                  width="800" height="600"
+                  loading="eager"
+                >
+              {% else %}
+                <div class="product-img-placeholder flex-center" style="height:400px;">
+                  <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="rgba(124,58,237,0.4)" stroke-width="1.5" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+              {% endif %}
+            </div>
+
+            {% if product.images.size > 1 %}
+            <div class="product-thumbnails" role="list">
+              {% for image in product.images limit: 5 %}
+                <button
+                  class="product-thumb {% if forloop.first %}active{% endif %}"
+                  data-img="{{ image | img_url: '800x600', crop: 'center' }}"
+                  aria-label="صورة {{ forloop.index }}"
+                  role="listitem"
+                >
+                  <img src="{{ image | img_url: '120x90', crop: 'center' }}" alt="" loading="lazy">
+                </button>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- RIGHT: Info -->
+          <div class="product-info" data-animate="left">
+
+            <!-- Badges row -->
+            <div class="product-badges">
+              <span class="badge-glow">
+                <span class="dot"></span>
+                تحميل فوري
+              </span>
+              {% if product.is_new %}
+                <span class="badge badge-info">جديد</span>
+              {% endif %}
+              {% if product.is_bestseller %}
+                <span class="badge badge-primary">الأكثر مبيعاً</span>
+              {% endif %}
+            </div>
+
+            <!-- Category -->
+            {% if product.categories.first %}
+              <a href="{{ product.categories.first.url }}" class="product-category-link">
+                {{ product.categories.first.name }}
+              </a>
+            {% endif %}
+
+            <!-- Title -->
+            <h1 class="product-title">{{ product.name }}</h1>
+
+            <!-- Rating -->
+            {% if product.rating %}
+            <div class="product-rating-row">
+              <div class="stars">
+                {% for i in (1..5) %}
+                  <svg viewBox="0 0 20 20">
+                    <path fill="{% if i <= product.rating %}#F59E0B{% else %}rgba(255,255,255,0.15){% endif %}"
+                      d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                  </svg>
+                {% endfor %}
+              </div>
+              <span class="rating-text">{{ product.rating }}/5</span>
+              {% if product.reviews_count %}
+                <span class="text-muted" style="font-size:var(--font-size-sm);">({{ product.reviews_count }} تقييم)</span>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Price -->
+            <div class="price-tag product-price-block">
+              {% if product.sale_price %}
+                <span class="price-current">{{ product.sale_price | money }}</span>
+                <span class="price-original">{{ product.price | money }}</span>
+                {% assign discount = product.price | minus: product.sale_price | times: 100 | divided_by: product.price %}
+                <span class="price-discount">وفر {{ discount }}%</span>
+              {% else %}
+                <span class="price-current">{{ product.price | money }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Short description -->
+            {% if product.short_description %}
+              <p class="product-short-desc">{{ product.short_description }}</p>
+            {% endif %}
+
+            <!-- What's included -->
+            {% if product.features.size > 0 or settings.show_includes %}
+            <div class="product-includes glass-sm">
+              <h3 class="includes-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                </svg>
+                ماذا يحتوي المنتج؟
+              </h3>
+              <ul class="includes-list">
+                {% if product.features.size > 0 %}
+                  {% for feature in product.features %}
+                    <li class="includes-item">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <span>{{ feature }}</span>
+                    </li>
+                  {% endfor %}
+                {% else %}
+                  <li class="includes-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>ملفات المصدر الكاملة</span></li>
+                  <li class="includes-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>توثيق شامل</span></li>
+                  <li class="includes-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>تحديثات مجانية مدى الحياة</span></li>
+                  <li class="includes-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>دعم فني لمدة 6 أشهر</span></li>
+                {% endif %}
+              </ul>
+            </div>
+            {% endif %}
+
+            <!-- Add to cart -->
+            <div class="product-cta">
+              <salla-add-product-button
+                product-id="{{ product.id }}"
+                class="btn btn-glow btn-lg w-full"
+                style="justify-content:center;"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <path d="M16 10a4 4 0 01-8 0"/>
+                </svg>
+                أضف إلى السلة
+              </salla-add-product-button>
+
+              <salla-wishlist-button product-id="{{ product.id }}" class="btn btn-secondary btn-lg" aria-label="أضف للمفضلة">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                </svg>
+              </salla-wishlist-button>
+            </div>
+
+            <!-- Trust row -->
+            <div class="product-trust-row">
+              <div class="trust-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#34D399" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>دفع آمن ومشفر</span>
+              </div>
+              <div class="trust-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#60A5FA" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>تحميل فوري</span>
+              </div>
+              <div class="trust-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B" aria-hidden="true">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span>ضمان الجودة</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PRODUCT DETAILS TABS ===== -->
+    <section class="section-sm">
+      <div class="container">
+        <div class="tabs-glass product-tabs-nav" role="tablist">
+          <button class="tab-btn active" role="tab" data-tab="description" aria-selected="true">وصف المنتج</button>
+          <button class="tab-btn" role="tab" data-tab="reviews"     aria-selected="false">التقييمات</button>
+          <button class="tab-btn" role="tab" data-tab="faq"         aria-selected="false">الأسئلة الشائعة</button>
+        </div>
+
+        <div class="product-tabs-content">
+
+          <!-- Description -->
+          <div class="tab-panel active glass-card" id="tab-description" role="tabpanel">
+            <div class="product-description">
+              {{ product.description }}
+            </div>
+          </div>
+
+          <!-- Reviews -->
+          <div class="tab-panel glass-card" id="tab-reviews" role="tabpanel" hidden>
+            <salla-rating-stars product-id="{{ product.id }}"></salla-rating-stars>
+            <salla-reviews product-id="{{ product.id }}"></salla-reviews>
+          </div>
+
+          <!-- FAQ -->
+          <div class="tab-panel glass-card" id="tab-faq" role="tabpanel" hidden>
+            <div class="faq-list">
+              {% assign faqs_q = "ما هو نظام التحميل؟,هل يمكنني الحصول على استرداد؟,هل المنتج قابل للتحديث؟,كيف أحصل على الدعم الفني؟" | split: "," %}
+              {% assign faqs_a = "بعد إتمام الدفع ستصلك رسالة بريدية تحتوي على رابط التحميل المباشر فوراً.,نعم، نقدم ضمان استرداد المبلغ خلال 7 أيام في حال وجود مشكلة تقنية.,جميع المنتجات تحصل على تحديثات مجانية مدى الحياة.,يمكنك التواصل معنا عبر البريد الإلكتروني أو الدردشة المباشرة." | split: "," %}
+              {% for q in faqs_q %}
+              <div class="faq-item" data-faq="{{ forloop.index }}">
+                <button class="faq-question" aria-expanded="false">
+                  <span>{{ q }}</span>
+                  <svg class="faq-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+                <div class="faq-answer" hidden>
+                  <p>{{ faqs_a[forloop.index0] }}</p>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== RELATED PRODUCTS ===== -->
+    {% if product.related_products.size > 0 %}
+    <section class="section-sm">
+      <div class="container">
+        <div class="section-header" data-animate="up">
+          <span class="eyebrow">قد يعجبك أيضاً</span>
+          <h2>منتجات <span class="text-gradient">مشابهة</span></h2>
+        </div>
+        <div class="related-slider" id="related-slider">
+          {% for related in product.related_products limit: 6 %}
+            {% render 'product-card', product: related %}
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+  </main>
+
+  <!-- Footer (shared) -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-bottom" style="border-top:none; padding-top:0;">
+        <p>© {{ 'now' | date: '%Y' }} {{ store.name }}. جميع الحقوق محفوظة.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Product Page Styles -->
+  <style>
+  .product-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-12);
+    align-items: start;
+  }
+
+  /* Media */
+  .product-image-main {
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    aspect-ratio: 4/3;
+  }
+
+  .product-image-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+  }
+
+  .product-image-main:hover img { transform: scale(1.03); }
+
+  .product-thumbnails {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
+    scrollbar-width: none;
+  }
+
+  .product-thumbnails::-webkit-scrollbar { display: none; }
+
+  .product-thumb {
+    width: 72px;
+    height: 54px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: border-color var(--transition-fast);
+    flex-shrink: 0;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+  }
+
+  .product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .product-thumb.active { border-color: var(--color-purple); box-shadow: 0 0 12px rgba(124,58,237,0.4); }
+  .product-thumb:hover { border-color: rgba(124,58,237,0.5); }
+
+  /* Info */
+  .product-badges { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap: wrap; }
+
+  .product-category-link {
+    font-size: var(--font-size-xs);
+    color: var(--color-purple-light);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: var(--space-2);
+  }
+
+  .product-title {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: var(--space-4);
+  }
+
+  .product-rating-row { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+  .rating-text { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+
+  .product-price-block { margin-bottom: var(--space-5); }
+  .product-price-block .price-current { font-size: clamp(1.75rem, 3vw, 2.5rem); }
+
+  .product-short-desc { margin-bottom: var(--space-5); }
+
+  /* Includes */
+  .product-includes {
+    padding: var(--space-5);
+    margin-bottom: var(--space-5);
+  }
+
+  .includes-title {
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+    color: var(--color-text-primary);
+  }
+
+  .includes-list { display: flex; flex-direction: column; gap: var(--space-3); }
+
+  .includes-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .includes-item svg { flex-shrink: 0; }
+
+  /* CTA */
+  .product-cta {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+  }
+
+  .product-cta .btn-glow { flex: 1; }
+
+  /* Trust row */
+  .product-trust-row {
+    display: flex;
+    gap: var(--space-5);
+    flex-wrap: wrap;
+    padding: var(--space-4);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    flex-wrap: wrap;
+  }
+
+  .breadcrumb a { color: var(--color-text-muted); transition: color var(--transition-fast); }
+  .breadcrumb a:hover { color: var(--color-purple-light); }
+  .breadcrumb-sep { color: var(--color-border); }
+  .breadcrumb span[aria-current] { color: var(--color-text-secondary); }
+
+  /* Tabs */
+  .product-tabs-nav { margin-bottom: var(--space-6); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: fadeInUp 0.3s ease; }
+
+  .product-description {
+    color: var(--color-text-secondary);
+    line-height: 1.9;
+  }
+
+  .product-description h1, .product-description h2, .product-description h3 {
+    color: var(--color-text-primary);
+    margin-top: var(--space-6);
+    margin-bottom: var(--space-3);
+  }
+
+  .product-description ul { padding-inline-start: var(--space-5); }
+  .product-description li { margin-bottom: var(--space-2); }
+  .product-description p  { margin-bottom: var(--space-4); }
+
+  /* FAQ */
+  .faq-list { display: flex; flex-direction: column; gap: var(--space-2); }
+
+  .faq-item { border-bottom: 1px solid var(--color-border-light); }
+
+  .faq-question {
+    width: 100%;
+    padding: var(--space-4) 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: start;
+    gap: var(--space-3);
+  }
+
+  .faq-icon { transition: transform var(--transition-base); flex-shrink: 0; }
+  .faq-question[aria-expanded="true"] .faq-icon { transform: rotate(180deg); }
+
+  .faq-answer { padding-bottom: var(--space-4); }
+  .faq-answer p { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+
+  /* Related slider */
+  .related-slider {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-5);
+    overflow-x: auto;
+  }
+
+  @media (max-width: 768px) {
+    .product-layout { grid-template-columns: 1fr; }
+    .product-cta { flex-direction: column; }
+    .product-cta .btn-glow { flex: none; }
+  }
+  </style>
+
+  <script src="{{ 'theme.js' | asset_url }}" defer></script>
+  {{ content_for_layout }}
+
+</body>
+</html>
