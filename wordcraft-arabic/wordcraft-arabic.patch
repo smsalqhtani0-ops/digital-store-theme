@@ -57,6 +57,120 @@ index 12a4a1a..d7631b9 100644
      chars.into_iter().filter(|c| !faces.iter().any(|m| m.map(*c).is_some())).collect()
  }
  
+diff --git a/crates/ui-egui/src/chrome.rs b/crates/ui-egui/src/chrome.rs
+index b5b63d1..468162d 100644
+--- a/crates/ui-egui/src/chrome.rs
++++ b/crates/ui-egui/src/chrome.rs
+@@ -275,9 +275,18 @@ pub fn title_bar(app: &mut WordApp, ui: &mut Ui) {
+                 let max = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
+                 ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!max));
+             }
++            // AutoSave and the Quick Access Toolbar start the bar and Search ends it; a right-to-left
++            // interface swaps the sides. `qat_end` and `right_start` are where each side stops,
++            // measured from the bar's start.
++            let rtl = crate::widgets::rtl();
+             let mut qat_end = full.min.x;
+             let mut right_start = full.max.x;
+-            ui.horizontal_centered(|ui| {
++            let (to_start, to_end) = if rtl {
++                (egui::Layout::right_to_left(egui::Align::Center), egui::Layout::left_to_right(egui::Align::Center))
++            } else {
++                (egui::Layout::left_to_right(egui::Align::Center), egui::Layout::right_to_left(egui::Align::Center))
++            };
++            ui.with_layout(to_start, |ui| {
+                 ui.spacing_mut().item_spacing = vec2(2.0, 0.0);
+                 // AutoSave switch: greyed out, with the reason as its tooltip, when AutoSave can't
+                 // cover the document (#196, #176); clicking it then offers Save As where that helps.
+@@ -314,8 +323,8 @@ pub fn title_bar(app: &mut WordApp, ui: &mut Ui) {
+                 if app.ui.quick_access_toolbar {
+                     quick_access(ui, app);
+                 }
+-                qat_end = ui.min_rect().max.x;
+-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
++                qat_end = if rtl { ui.min_rect().min.x } else { ui.min_rect().max.x };
++                ui.with_layout(to_end, |ui| {
+                     // Account / community.
+                     let (r, resp) = ui.allocate_exact_size(vec2(control_h, control_h), Sense::click());
+                     ui.painter().circle_filled(r.center(), control_h / 2.0 - 1.0, t.accent);
+@@ -331,12 +340,13 @@ pub fn title_bar(app: &mut WordApp, ui: &mut Ui) {
+                         ui.painter().rect_filled(r, 11.0, if resp.hovered() { t.accent_text } else { t.accent });
+                         icons::paint(
+                             ui.painter(),
+-                            Rect::from_center_size(pos2(r.min.x + 13.0, r.center().y), vec2(14.0, 14.0)),
++                            Rect::from_center_size(pos2(crate::widgets::mirror_x(r, r.min.x + 13.0), r.center().y), vec2(14.0, 14.0)),
+                             "discord",
+                             t.on_accent,
+                             t.on_accent,
+                         );
+-                        ui.painter().text(pos2(r.min.x + 24.0, r.center().y), Align2::LEFT_CENTER, tl!("Discord"), medium(11.5), t.on_accent);
++                        let at = pos2(crate::widgets::mirror_x(r, r.min.x + 24.0), r.center().y);
++                        ui.painter().text(at, crate::widgets::start_align(egui::Align::Center), tl!("Discord"), medium(11.5), t.on_accent);
+                         if resp.on_hover_text(tl!("Join the ArtCraft community on Discord")).clicked() {
+                             let _ = app.run("ui.discord", json!({}));
+                         }
+@@ -347,7 +357,7 @@ pub fn title_bar(app: &mut WordApp, ui: &mut Ui) {
+                     ui.painter().rect(r, 6.0, if resp.hovered() { t.input } else { t.ribbon }, Stroke::new(1.0, t.border), egui::StrokeKind::Inside);
+                     icons::paint(
+                         ui.painter(),
+-                        Rect::from_center_size(pos2(r.min.x + 16.0, r.center().y), vec2(16.0, 16.0)),
++                        Rect::from_center_size(pos2(crate::widgets::mirror_x(r, r.min.x + 16.0), r.center().y), vec2(16.0, 16.0)),
+                         "search",
+                         t.text_dim,
+                         t.accent,
+@@ -357,8 +367,8 @@ pub fn title_bar(app: &mut WordApp, ui: &mut Ui) {
+                     let ptrack = TypeRung::Control.tracking();
+                     paint_text(
+                         ui.painter(),
+-                        pos2(r.min.x + 30.0, r.center().y - TypeRung::Control.line_height() / 2.0),
+-                        Align2::LEFT_TOP,
++                        pos2(crate::widgets::mirror_x(r, r.min.x + 30.0), r.center().y - TypeRung::Control.line_height() / 2.0),
++                        crate::widgets::start_align(egui::Align::TOP),
+                         ph,
+                         &pfont,
+                         ptrack,
+@@ -374,7 +384,7 @@ pub fn title_bar(app: &mut WordApp, ui: &mut Ui) {
+                     if resp.on_hover_text(tip).clicked() {
+                         let _ = app.run("tools.search", json!({}));
+                     }
+-                    right_start = ui.min_rect().min.x;
++                    right_start = if rtl { ui.min_rect().max.x } else { ui.min_rect().min.x };
+                 });
+             });
+             // Centred title.
+@@ -382,22 +392,21 @@ pub fn title_bar(app: &mut WordApp, ui: &mut Ui) {
+                 // No document open (#1129): the app's name alone.
+                 "WordCraft".to_string()
+             } else {
+-                format!(
+-                    "{} — {}",
+-                    app.title_stem(),
+-                    if app.session.dirty {
+-                        tl!("Edited")
+-                    } else if app.session.path.is_some() {
+-                        tl!("Saved")
+-                    } else {
+-                        tl!("Not saved")
+-                    }
+-                )
++                let state = if app.session.dirty {
++                    tl!("Edited")
++                } else if app.session.path.is_some() {
++                    tl!("Saved")
++                } else {
++                    tl!("Not saved")
++                };
++                // Read from the right, the state comes after the name.
++                if rtl { format!("{state} — {}", app.title_stem()) } else { format!("{} — {state}", app.title_stem()) }
+             };
+             let font = TypeRung::Chrome.semibold();
+             let track = TypeRung::Chrome.tracking();
+             let cx = full.center().x;
+-            let available = 2.0 * (cx - qat_end - 10.0).min(right_start - 10.0 - cx);
++            let (lo, hi) = if rtl { (right_start, qat_end) } else { (qat_end, right_start) };
++            let available = 2.0 * (cx - lo - 10.0).min(hi - 10.0 - cx);
+             let mut shown: String = title.chars().take(240).collect();
+             if text_width(ui.painter(), &shown, &font, track, t.text) > available {
+                 while !shown.is_empty() && text_width(ui.painter(), &format!("{shown}…"), &font, track, t.text) > available {
 diff --git a/crates/ui-egui/src/i18n/ar.tsv b/crates/ui-egui/src/i18n/ar.tsv
 new file mode 100644
 index 0000000..b89d145
@@ -3153,6 +3267,302 @@ index c7f687a..c28d5c4 100644
          self.install_ui_fonts(ctx, lang);
          self.report_dirty();
      }
+diff --git a/crates/ui-egui/src/ribbon.rs b/crates/ui-egui/src/ribbon.rs
+index 1c45f5f..eb878ac 100644
+--- a/crates/ui-egui/src/ribbon.rs
++++ b/crates/ui-egui/src/ribbon.rs
+@@ -331,7 +331,15 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
+                     })
+                     .collect();
+                 let plan = plan_strip(&specs, button_levels, ui.available_width(), MORE_TABS_W + 2.0);
+-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
++                // Share, Editing and Comments sit at the end of the strip and the tabs run from its
++                // start: right to left in a right-to-left interface, so the sides swap.
++                let rtl = crate::widgets::rtl();
++                let (to_end, to_start) = if rtl {
++                    (egui::Layout::left_to_right(egui::Align::Center), egui::Layout::right_to_left(egui::Align::Center))
++                } else {
++                    (egui::Layout::right_to_left(egui::Align::Center), egui::Layout::left_to_right(egui::Align::Center))
++                };
++                ui.with_layout(to_end, |ui| {
+                     // No document open (#1129): nothing to share, edit or comment on — but only
+                     // these buttons. Disabling the whole line took the tab strip with it: the
+                     // tabs took clicks that did nothing, so the empty window had no way back to
+@@ -341,7 +349,7 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
+                             if plan.buttons < 2 { (((share_w + 36.0).max(74.0), 24.0), true) } else { ((30.0, 24.0), false) };
+                         let (r, resp) = ui.allocate_exact_size(vec2(share_size.0, share_size.1), Sense::click());
+                         ui.painter().rect_filled(r, 4.0, if resp.hovered() { t.accent_text } else { t.accent });
+-                        let icon_x = if share_text { r.min.x + 14.0 } else { r.center().x };
++                        let icon_x = if share_text { crate::widgets::mirror_x(r, r.min.x + 14.0) } else { r.center().x };
+                         icons::paint(
+                             ui.painter(),
+                             Rect::from_center_size(pos2(icon_x, r.center().y), vec2(14.0, 14.0)),
+@@ -350,7 +358,8 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
+                             t.on_accent,
+                         );
+                         if share_text {
+-                            ui.painter().text(pos2(r.min.x + 26.0, r.center().y), Align2::LEFT_CENTER, share, medium(12.0), t.on_accent);
++                            let at = pos2(crate::widgets::mirror_x(r, r.min.x + 26.0), r.center().y);
++                            ui.painter().text(at, crate::widgets::start_align(egui::Align::Center), share, medium(12.0), t.on_accent);
+                         }
+                         resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, share));
+                         if resp.on_hover_text(tl!("Export a copy to share (PDF, Word document)")).clicked() {
+@@ -384,7 +393,7 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
+                         }
+                     });
+                     ui.add_space(8.0);
+-                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
++                    ui.with_layout(to_start, |ui| {
+                         // The tabs that don't fit go into a » menu at the end of the strip (#897, #2026).
+                         for (i, ((tab, custom), _)) in tabs.iter().zip(&plan.fits).enumerate().filter(|(_, (_, fits))| **fits) {
+                             let (tab, custom) = (tab.as_str(), *custom);
+@@ -491,8 +500,39 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
+             bg.context_menu(|ui| crate::widgets::customize_menu_items(ui, app));
+             let entry = user_tabs.iter().find(|e| e.name == app.ui.tab);
+             crate::ribbon_fit::begin(ui.ctx(), &app.ui.tab, ui.available_width() - 4.0);
+-            let scroll = egui::ScrollArea::horizontal().scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden).show(ui, |ui| {
+-                ui.horizontal_top(|ui| {
++            // Right to left, the groups run from the right edge. The scroll area's content is as
++            // wide as it likes, so they are laid out in a box as wide as they were last frame (at
++            // least the visible width), and the view starts at its right end.
++            let rtl = crate::widgets::rtl();
++            let visible_w = ui.available_width();
++            let width_id = ui.id().with(("rtl_groups_width", app.ui.tab.as_str()));
++            let last_w: f32 = ui.data(|d| d.get_temp(width_id)).unwrap_or(0.0);
++            let mut area = egui::ScrollArea::horizontal().scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden);
++            let started_id = ui.id().with(("rtl_groups_started", app.ui.tab.as_str()));
++            if rtl && !ui.data(|d| d.get_temp::<bool>(started_id).unwrap_or(false)) {
++                area = area.horizontal_scroll_offset((last_w - visible_w).max(0.0));
++                if last_w > 0.0 {
++                    ui.data_mut(|d| d.insert_temp(started_id, true));
++                }
++            }
++            let scroll = area.show(ui, |ui| {
++                let row = |ui: &mut Ui, add: &mut dyn FnMut(&mut Ui)| {
++                    if rtl {
++                        let w = visible_w.max(last_w);
++                        let inner = ui.allocate_ui_with_layout(vec2(w, ui.available_height()), egui::Layout::right_to_left(egui::Align::Min), |ui| {
++                            add(ui);
++                            ui.min_rect().width()
++                        });
++                        let used = inner.inner;
++                        if (used - last_w).abs() > 0.5 {
++                            ui.data_mut(|d| d.insert_temp(width_id, used));
++                            ui.ctx().request_repaint();
++                        }
++                    } else {
++                        ui.horizontal_top(|ui| add(ui));
++                    }
++                };
++                row(ui, &mut |ui: &mut Ui| {
+                     ui.spacing_mut().item_spacing = vec2(2.0, 2.0);
+                     match entry {
+                         // Every tab hidden: nothing to show.
+@@ -621,7 +661,7 @@ fn esc_cancelled(ui: &Ui, r: &egui::Response, id: egui::Id) -> bool {
+ }
+ 
+ fn stack(ui: &mut Ui, add: impl FnOnce(&mut Ui)) {
+-    ui.vertical(|ui| {
++    crate::widgets::column(ui, |ui| {
+         ui.spacing_mut().item_spacing = vec2(1.0, 0.0);
+         add(ui);
+     });
+@@ -1689,36 +1729,44 @@ fn layout(app: &mut WordApp, ui: &mut Ui) {
+                 ui.label(text);
+             });
+         };
+-        egui::Grid::new("layout_para").spacing(vec2(4.0, 1.5)).min_row_height(FIELD.y).show(ui, |ui| {
+-            ui.label(egui::RichText::new(tl!("Indent")).small().strong());
+-            ui.label("");
+-            spaced(ui, egui::RichText::new(tl!("Spacing")).small().strong());
+-            ui.end_row();
+-            // Indents in the File › Options unit.
+-            let u = crate::options::unit();
+-            let k = u.pt_per_unit();
+-            let mut l = rp.indent_left / k;
+-            let mut b = rp.space_before;
+-            ui.label(egui::RichText::new(tl!("Left:")).small());
+-            if ui.add_sized(FIELD, egui::DragValue::new(&mut l).speed(3.6 / k).range(-792.0 / k..=1584.0 / k).measure(u).max_decimals(2)).changed() {
+-                let _ = app.run("para.indents", json!({"left": l * k}));
+-            }
+-            spaced(ui, egui::RichText::new(tl!("Before:")).small());
+-            if ui.add_sized(FIELD, egui::DragValue::new(&mut b).speed(1.0).range(0.0..=1584.0).suffix(format!(" {}", tl!("pt")))).changed() {
+-                let _ = app.run("para.spacing", json!({"before": b}));
+-            }
+-            ui.end_row();
+-            let mut r = rp.indent_right / k;
+-            let mut a = rp.space_after;
+-            ui.label(egui::RichText::new(tl!("Right:")).small());
+-            if ui.add_sized(FIELD, egui::DragValue::new(&mut r).speed(3.6 / k).range(-792.0 / k..=1584.0 / k).measure(u).max_decimals(2)).changed() {
+-                let _ = app.run("para.indents", json!({"right": r * k}));
+-            }
+-            spaced(ui, egui::RichText::new(tl!("After:")).small());
+-            if ui.add_sized(FIELD, egui::DragValue::new(&mut a).speed(1.0).range(0.0..=1584.0).suffix(format!(" {}", tl!("pt")))).changed() {
+-                let _ = app.run("para.spacing", json!({"after": a}));
+-            }
+-            ui.end_row();
++        crate::widgets::ltr_block(ui, "layout_para", |ui| {
++            egui::Grid::new("layout_para").spacing(vec2(4.0, 1.5)).min_row_height(FIELD.y).show(ui, |ui| {
++                ui.label(egui::RichText::new(tl!("Indent")).small().strong());
++                ui.label("");
++                spaced(ui, egui::RichText::new(tl!("Spacing")).small().strong());
++                ui.end_row();
++                // Indents in the File › Options unit.
++                let u = crate::options::unit();
++                let k = u.pt_per_unit();
++                let mut l = rp.indent_left / k;
++                let mut b = rp.space_before;
++                ui.label(egui::RichText::new(tl!("Left:")).small());
++                if ui
++                    .add_sized(FIELD, egui::DragValue::new(&mut l).speed(3.6 / k).range(-792.0 / k..=1584.0 / k).measure(u).max_decimals(2))
++                    .changed()
++                {
++                    let _ = app.run("para.indents", json!({"left": l * k}));
++                }
++                spaced(ui, egui::RichText::new(tl!("Before:")).small());
++                if ui.add_sized(FIELD, egui::DragValue::new(&mut b).speed(1.0).range(0.0..=1584.0).suffix(format!(" {}", tl!("pt")))).changed() {
++                    let _ = app.run("para.spacing", json!({"before": b}));
++                }
++                ui.end_row();
++                let mut r = rp.indent_right / k;
++                let mut a = rp.space_after;
++                ui.label(egui::RichText::new(tl!("Right:")).small());
++                if ui
++                    .add_sized(FIELD, egui::DragValue::new(&mut r).speed(3.6 / k).range(-792.0 / k..=1584.0 / k).measure(u).max_decimals(2))
++                    .changed()
++                {
++                    let _ = app.run("para.indents", json!({"right": r * k}));
++                }
++                spaced(ui, egui::RichText::new(tl!("After:")).small());
++                if ui.add_sized(FIELD, egui::DragValue::new(&mut a).speed(1.0).range(0.0..=1584.0).suffix(format!(" {}", tl!("pt")))).changed() {
++                    let _ = app.run("para.spacing", json!({"after": a}));
++                }
++                ui.end_row();
++            });
+         });
+     });
+     group(ui, "Arrange", None, app, |ui, app| {
+@@ -2258,26 +2306,28 @@ fn smart_art_design(app: &mut WordApp, ui: &mut Ui) {
+     });
+     group(ui, "Layouts", None, app, |ui, app| {
+         let t = Tokens::get(ui.ctx());
+-        egui::Grid::new("smart_art_layout_gallery").spacing(vec2(2.0, 2.0)).show(ui, |ui| {
+-            for (k, layout) in SmartArtLayout::ALL.into_iter().enumerate() {
+-                let (r, resp) = ui.allocate_exact_size(vec2(46.0, 31.0), Sense::click());
+-                let on = g.layout == layout;
+-                let fill = if on {
+-                    t.checked
+-                } else if resp.hovered() {
+-                    t.hover
+-                } else {
+-                    t.ribbon
+-                };
+-                ui.painter().rect(r, 3.0, fill, Stroke::new(1.0, if on { t.accent } else { t.border }), egui::StrokeKind::Inside);
+-                crate::dialogs_smart_art::preview(ui.painter(), r.shrink(2.0), layout, g.colors, &theme, t.text_dim);
+-                if resp.on_hover_text(tl!(layout.label())).clicked() && !on {
+-                    let _ = app.run("smartArt.layout", json!({"layout": layout.id()}));
+-                }
+-                if k % 4 == 3 {
+-                    ui.end_row();
++        crate::widgets::ltr_block(ui, "smart_art_layout_gallery", |ui| {
++            egui::Grid::new("smart_art_layout_gallery").spacing(vec2(2.0, 2.0)).show(ui, |ui| {
++                for (k, layout) in SmartArtLayout::ALL.into_iter().enumerate() {
++                    let (r, resp) = ui.allocate_exact_size(vec2(46.0, 31.0), Sense::click());
++                    let on = g.layout == layout;
++                    let fill = if on {
++                        t.checked
++                    } else if resp.hovered() {
++                        t.hover
++                    } else {
++                        t.ribbon
++                    };
++                    ui.painter().rect(r, 3.0, fill, Stroke::new(1.0, if on { t.accent } else { t.border }), egui::StrokeKind::Inside);
++                    crate::dialogs_smart_art::preview(ui.painter(), r.shrink(2.0), layout, g.colors, &theme, t.text_dim);
++                    if resp.on_hover_text(tl!(layout.label())).clicked() && !on {
++                        let _ = app.run("smartArt.layout", json!({"layout": layout.id()}));
++                    }
++                    if k % 4 == 3 {
++                        ui.end_row();
++                    }
+                 }
+-            }
++            });
+         });
+     });
+     group(ui, "SmartArt Styles", None, app, |ui, app| {
+@@ -2688,24 +2738,26 @@ fn table_design(app: &mut WordApp, ui: &mut Ui) {
+     let look = app.session.sel.focus.path.cell().and_then(|(tp, _, _)| app.session.doc.table(app.session.sel.focus.story, &tp).map(|t| t.props.look));
+     group(ui, "Table Style Options", None, app, |ui, app| {
+         let Some(l) = look else { return };
+-        egui::Grid::new("look").show(ui, |ui| {
+-            for (row, items) in [
+-                [("Header Row", "headerRow", l.header_row), ("First Column", "firstColumn", l.first_column)],
+-                [("Total Row", "totalRow", l.total_row), ("Last Column", "lastColumn", l.last_column)],
+-                [("Banded Rows", "bandedRows", l.banded_rows), ("Banded Columns", "bandedColumns", l.banded_columns)],
+-            ]
+-            .iter()
+-            .enumerate()
+-            {
+-                let _ = row;
+-                for (label, key, val) in items {
+-                    let mut v = *val;
+-                    if ui.checkbox(&mut v, tl!(label)).changed() {
+-                        let _ = app.run("table.look", json!({ *key: v }));
++        crate::widgets::ltr_block(ui, "look", |ui| {
++            egui::Grid::new("look").show(ui, |ui| {
++                for (row, items) in [
++                    [("Header Row", "headerRow", l.header_row), ("First Column", "firstColumn", l.first_column)],
++                    [("Total Row", "totalRow", l.total_row), ("Last Column", "lastColumn", l.last_column)],
++                    [("Banded Rows", "bandedRows", l.banded_rows), ("Banded Columns", "bandedColumns", l.banded_columns)],
++                ]
++                .iter()
++                .enumerate()
++                {
++                    let _ = row;
++                    for (label, key, val) in items {
++                        let mut v = *val;
++                        if ui.checkbox(&mut v, tl!(label)).changed() {
++                            let _ = app.run("table.look", json!({ *key: v }));
++                        }
+                     }
++                    ui.end_row();
+                 }
+-                ui.end_row();
+-            }
++            });
+         });
+     });
+     group(ui, "Table Styles", None, app, |ui, app| {
+@@ -2897,17 +2949,19 @@ fn table_layout(app: &mut WordApp, ui: &mut Ui) {
+         });
+     });
+     group(ui, "Alignment", None, app, |ui, app| {
+-        egui::Grid::new("cellalign").spacing(vec2(1.0, 1.0)).show(ui, |ui| {
+-            for row in [
+-                [("topLeft", "Align Top Left"), ("topCenter", "Align Top Center"), ("topRight", "Align Top Right")],
+-                [("centerLeft", "Align Center Left"), ("center", "Align Center"), ("centerRight", "Align Center Right")],
+-                [("bottomLeft", "Align Bottom Left"), ("bottomCenter", "Align Bottom Center"), ("bottomRight", "Align Bottom Right")],
+-            ] {
+-                for (v, tip) in row {
+-                    small(ui, app, "cellAlign", None, tip, "table.cellAlign", json!({"value": v}), false);
++        crate::widgets::ltr_block(ui, "cellalign", |ui| {
++            egui::Grid::new("cellalign").spacing(vec2(1.0, 1.0)).show(ui, |ui| {
++                for row in [
++                    [("topLeft", "Align Top Left"), ("topCenter", "Align Top Center"), ("topRight", "Align Top Right")],
++                    [("centerLeft", "Align Center Left"), ("center", "Align Center"), ("centerRight", "Align Center Right")],
++                    [("bottomLeft", "Align Bottom Left"), ("bottomCenter", "Align Bottom Center"), ("bottomRight", "Align Bottom Right")],
++                ] {
++                    for (v, tip) in row {
++                        small(ui, app, "cellAlign", None, tip, "table.cellAlign", json!({"value": v}), false);
++                    }
++                    ui.end_row();
+                 }
+-                ui.end_row();
+-            }
++            });
+         });
+         big(ui, app, "textDirection", "Text\nDirection", "table.textDirection", json!({}), false);
+         big(ui, app, "cellMargins", "Cell\nMargins", "table.cellMargins", json!({}), false);
 diff --git a/crates/ui-egui/src/theme.rs b/crates/ui-egui/src/theme.rs
 index b9c1239..2629522 100644
 --- a/crates/ui-egui/src/theme.rs
@@ -3169,3 +3579,203 @@ index b9c1239..2629522 100644
      // The embedded faces leave interface characters without a glyph (a build without craft-fonts,
      // without its Chinese face, #241, or with faces lacking catalog characters, #486): an
      // installed CJK font after them, so the menus don't show boxes or `?`.
+diff --git a/crates/ui-egui/src/widgets.rs b/crates/ui-egui/src/widgets.rs
+index f27f5c0..964c137 100644
+--- a/crates/ui-egui/src/widgets.rs
++++ b/crates/ui-egui/src/widgets.rs
+@@ -227,6 +227,51 @@ pub fn big_toggle(ui: &mut Ui, app: &mut WordApp, icon: &str, label: &str, id: &
+ /// the `dropdown` icon, everywhere; no text glyph).
+ pub const DROPDOWN: f32 = 10.0;
+ 
++/// Is the interface laid out right to left (an Arabic interface)?
++pub fn rtl() -> bool {
++    crate::i18n::current().is_rtl()
++}
++
++/// `x`, a position inside `rect` worked out for a left-to-right interface, on the side it goes in
++/// the interface's direction: mirrored across `rect` when the interface reads right to left.
++pub fn mirror_x(rect: Rect, x: f32) -> f32 {
++    if rtl() { rect.min.x + rect.max.x - x } else { x }
++}
++
++/// Text anchored at its start: left in a left-to-right interface, right in a right-to-left one.
++pub fn start_align(v: egui::Align) -> Align2 {
++    Align2([if rtl() { egui::Align::RIGHT } else { egui::Align::LEFT }, v])
++}
++
++/// A vertical stack of ribbon controls, lined up on the interface's start side (the right in a
++/// right-to-left interface, where rows inside it also run right to left).
++pub fn column<R>(ui: &mut Ui, add: impl FnOnce(&mut Ui) -> R) -> R {
++    if !rtl() {
++        return ui.vertical(add).inner;
++    }
++    ui.scope_builder(egui::UiBuilder::new().layout(egui::Layout::top_down(egui::Align::Max)), add).inner
++}
++
++/// `add` laid out left to right in a right-to-left ribbon row: a `Grid` (rows of labels and
++/// fields) assumes a left-to-right parent. The block takes the width it took last frame, so it
++/// sits in the row's flow; `id` keys that width.
++pub fn ltr_block(ui: &mut Ui, id: &str, add: impl FnOnce(&mut Ui)) {
++    if !rtl() {
++        add(ui);
++        return;
++    }
++    let key = ui.id().with(("ltr_block", id));
++    let last: f32 = ui.data(|d| d.get_temp(key)).unwrap_or(0.0);
++    let r = ui.allocate_ui_with_layout(vec2(last, ui.available_height()), egui::Layout::left_to_right(egui::Align::Min), |ui| {
++        add(ui);
++        ui.min_rect().width()
++    });
++    if (r.inner - last).abs() > 0.5 {
++        ui.data_mut(|d| d.insert_temp(key, r.inner));
++        ui.ctx().request_repaint();
++    }
++}
++
+ /// One centred label line (top at `y`); `marker` draws the drop-down icon after the text, in the
+ /// text's colour, and the pair is centred together.
+ pub fn label_line(ui: &Ui, cx: f32, y: f32, text: &str, font: egui::FontId, color: Color32, marker: bool) {
+@@ -234,9 +279,12 @@ pub fn label_line(ui: &Ui, cx: f32, y: f32, text: &str, font: egui::FontId, colo
+     let extra = if marker { DROPDOWN + 3.0 } else { 0.0 };
+     let size = galley.size();
+     let x = cx - (size.x + extra) / 2.0;
+-    ui.painter().galley(pos2(x, y), galley, color);
++    // The marker follows the text: after it, which is on its left when the interface reads
++    // right to left.
++    let text_x = if rtl() { x + extra } else { x };
++    ui.painter().galley(pos2(text_x, y), galley, color);
+     if marker {
+-        let c = pos2(x + size.x + 3.0 + DROPDOWN / 2.0, y + size.y / 2.0);
++        let c = pos2(if rtl() { x + DROPDOWN / 2.0 } else { x + size.x + 3.0 + DROPDOWN / 2.0 }, y + size.y / 2.0);
+         icons::paint(ui.painter(), Rect::from_center_size(c, vec2(DROPDOWN, DROPDOWN)), "dropdown", color, color);
+     }
+ }
+@@ -280,11 +328,12 @@ pub fn small(ui: &mut Ui, app: &mut WordApp, icon: &str, label: Option<&str>, ti
+     keytip_badge(ui, r, id, tip);
+     let on = enabled(app, id);
+     bg(ui, r, &resp, checked, &t);
+-    let ic = Rect::from_center_size(pos2(r.min.x + 12.0, r.center().y), vec2(17.0, 17.0));
++    let ic = Rect::from_center_size(pos2(mirror_x(r, r.min.x + 12.0), r.center().y), vec2(17.0, 17.0));
+     let (c, a) = if on { (t.icon, t.accent) } else { (t.text_disabled, t.text_disabled) };
+     icons::paint(ui.painter(), ic, icon, c, a);
+     if let Some(l) = label {
+-        ui.painter().text(pos2(r.min.x + 24.0, r.center().y), Align2::LEFT_CENTER, l, regular(11.5), if on { t.text } else { t.text_disabled });
++        let at = pos2(mirror_x(r, r.min.x + 24.0), r.center().y);
++        ui.painter().text(at, start_align(egui::Align::Center), l, regular(11.5), if on { t.text } else { t.text_disabled });
+     }
+     let resp = tooltip(app, resp, tip, id);
+     command_menu(&resp, app, id);
+@@ -386,11 +435,12 @@ pub fn menu_button(
+         let (r, resp) = ui.allocate_exact_size(vec2(24.0 + text_w + 10.0, 22.0), Sense::click());
+         keytip_badge(ui, r, "menu", tip);
+         bg(ui, r, &resp, false, &t);
+-        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.min.x + 12.0, r.center().y), vec2(17.0, 17.0)), icon, c, a);
++        icons::paint(ui.painter(), Rect::from_center_size(pos2(mirror_x(r, r.min.x + 12.0), r.center().y), vec2(17.0, 17.0)), icon, c, a);
+         if let Some(l) = label {
+-            ui.painter().text(pos2(r.min.x + 24.0, r.center().y), Align2::LEFT_CENTER, l, regular(11.5), text);
++            ui.painter().text(pos2(mirror_x(r, r.min.x + 24.0), r.center().y), start_align(egui::Align::Center), l, regular(11.5), text);
+         }
+-        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.max.x - 6.0, r.center().y), vec2(DROPDOWN, DROPDOWN)), "dropdown", c, c);
++        let marker = pos2(mirror_x(r, r.max.x - 6.0), r.center().y);
++        icons::paint(ui.painter(), Rect::from_center_size(marker, vec2(DROPDOWN, DROPDOWN)), "dropdown", c, c);
+         resp
+     };
+     let reason = if on { None } else { Some(app.session.registry.get(id).and_then(|s| (s.enabled)(&app.session)).unwrap_or("")) };
+@@ -423,6 +473,9 @@ pub fn group(ui: &mut Ui, title: &str, launcher: Option<&str>, app: &mut WordApp
+ pub fn group_titled(ui: &mut Ui, id_title: &str, title: &str, launcher: Option<&str>, app: &mut WordApp, add: impl FnOnce(&mut Ui, &mut WordApp)) {
+     let t = Tokens::get(ui.ctx());
+     let start = ui.cursor().min;
++    // Where the group starts along the row: its left edge, or its right edge right to left.
++    let rtl = rtl();
++    let start_x = if rtl { ui.cursor().max.x } else { start.x };
+     // #662: the window may be too narrow for the tab; the plan says how this group fits.
+     let position = crate::ribbon_fit::position(ui.ctx());
+     let level = crate::ribbon_fit::level(ui.ctx(), id_title);
+@@ -432,10 +485,12 @@ pub fn group_titled(ui: &mut Ui, id_title: &str, title: &str, launcher: Option<&
+         // Not folded: a drop-down left open while it was folded doesn't come back by itself.
+         ui.data_mut(|d| d.remove::<bool>(collapsed_open_id(ui, id_title, position)));
+         let label_w = ui.ctx().fonts_mut(|f| f.layout_no_wrap(title.to_string(), regular(11.0), t.group_label).size().x);
+-        let inner = ui.vertical(|ui| {
++        let flow = if rtl { egui::Layout::right_to_left(egui::Align::Min) } else { egui::Layout::left_to_right(egui::Align::Min) };
++        let stack = egui::Layout::top_down(if rtl { egui::Align::Max } else { egui::Align::Min });
++        let inner = ui.scope_builder(egui::UiBuilder::new().layout(stack), |ui| {
+             ui.set_min_width(label_w + if launcher.is_some() { 22.0 } else { 10.0 });
+             crate::ribbon_fit::set_compact(ui.ctx(), level == crate::ribbon_fit::COMPACT);
+-            let content = ui.allocate_ui_with_layout(vec2(ui.available_width(), CONTENT_H), egui::Layout::left_to_right(egui::Align::Min), |ui| {
++            let content = ui.allocate_ui_with_layout(vec2(ui.available_width(), CONTENT_H), flow, |ui| {
+                 ui.spacing_mut().item_spacing = vec2(1.0, 1.0);
+                 add(ui, app);
+             });
+@@ -450,7 +505,7 @@ pub fn group_titled(ui: &mut Ui, id_title: &str, title: &str, launcher: Option<&
+         let r = inner.response.rect;
+         title_row(
+             ui,
+-            Rect::from_min_max(pos2(start.x, start.y + CONTENT_H), pos2(r.max.x, start.y + CONTENT_H + LABEL_H)),
++            Rect::from_min_max(pos2(r.min.x, start.y + CONTENT_H), pos2(r.max.x, start.y + CONTENT_H + LABEL_H)),
+             id_title,
+             title,
+             launcher,
+@@ -458,10 +513,11 @@ pub fn group_titled(ui: &mut Ui, id_title: &str, title: &str, launcher: Option<&
+         );
+     }
+     ui.add_space(5.0);
+-    let x = ui.cursor().min.x;
++    let x = if rtl { ui.cursor().max.x } else { ui.cursor().min.x };
+     ui.painter().line_segment([pos2(x, start.y + 4.0), pos2(x, start.y + CONTENT_H + LABEL_H - 4.0)], Stroke::new(1.0, t.border));
+     ui.add_space(6.0);
+-    crate::ribbon_fit::record(ui.ctx(), id_title, level, ui.cursor().min.x - start.x);
++    let end_x = if rtl { ui.cursor().max.x } else { ui.cursor().min.x };
++    crate::ribbon_fit::record(ui.ctx(), id_title, level, (end_x - start_x).abs());
+ }
+ 
+ /// A group's title row (`r`): the centred title and, with a `launcher`, its dialog launcher.
+@@ -538,7 +594,7 @@ fn collapsed_group(
+         // full screen.
+         app.escape_free = false;
+         egui::Popup::menu(&resp).open_bool(&mut shown).close_behavior(egui::PopupCloseBehavior::IgnoreClicks).show(|ui| {
+-            ui.vertical(|ui| {
++            column(ui, |ui| {
+                 ui.horizontal_top(|ui| {
+                     ui.set_min_height(CONTENT_H);
+                     ui.spacing_mut().item_spacing = vec2(1.0, 1.0);
+@@ -1247,17 +1303,19 @@ fn icon_text_button_with(ui: &mut Ui, icon: &str, text: &str, font: egui::FontId
+     ui.painter().rect(r, ui.visuals().widgets.inactive.corner_radius, st.fill, st.stroke, egui::StrokeKind::Inside);
+     icons::paint(
+         ui.painter(),
+-        Rect::from_center_size(pos2(r.min.x + pad.x + icon_w / 2.0, r.center().y), vec2(icon_w, icon_w)),
++        Rect::from_center_size(pos2(mirror_x(r, r.min.x + pad.x + icon_w / 2.0), r.center().y), vec2(icon_w, icon_w)),
+         icon,
+         t.icon,
+         t.accent,
+     );
+     let text_x = r.min.x + pad.x + icon_w + if show_text { 4.0 } else { 0.0 };
+     if show_text {
+-        ui.painter().galley(pos2(text_x, r.center().y - galley.size().y / 2.0), galley, st.text);
++        // Mirrored, the text's right edge goes where its left edge was.
++        let x = if rtl() { mirror_x(r, text_x) - text_w } else { text_x };
++        ui.painter().galley(pos2(x, r.center().y - galley.size().y / 2.0), galley, st.text);
+     }
+     if marker {
+-        let c = pos2(text_x + text_w + 4.0 + DROPDOWN / 2.0, r.center().y);
++        let c = pos2(mirror_x(r, text_x + text_w + 4.0 + DROPDOWN / 2.0), r.center().y);
+         icons::paint(ui.painter(), Rect::from_center_size(c, vec2(DROPDOWN, DROPDOWN)), "dropdown", st.text, st.text);
+     }
+     resp
+@@ -1279,10 +1337,14 @@ pub fn icon_menu_item(ui: &mut Ui, icon: &str, text: &str, shortcut: &str, min_w
+     ui.painter().rect_filled(r, ui.visuals().widgets.inactive.corner_radius, st.fill);
+     let (line, accent) = if ui.is_enabled() { (t.icon, t.accent) } else { (t.text_disabled, t.text_disabled) };
+     let text_c = if ui.is_enabled() { st.text } else { t.text_disabled };
+-    icons::paint(ui.painter(), Rect::from_center_size(pos2(r.min.x + pad.x + icon_w / 2.0, r.center().y), vec2(icon_w, icon_w)), icon, line, accent);
+-    ui.painter().galley(pos2(r.min.x + pad.x + icon_w + 6.0, r.center().y - galley.size().y / 2.0), galley, text_c);
++    let icon_c = pos2(mirror_x(r, r.min.x + pad.x + icon_w / 2.0), r.center().y);
++    icons::paint(ui.painter(), Rect::from_center_size(icon_c, vec2(icon_w, icon_w)), icon, line, accent);
++    let text_x = r.min.x + pad.x + icon_w + 6.0;
++    let text_x = if rtl() { mirror_x(r, text_x) - galley.size().x } else { text_x };
++    ui.painter().galley(pos2(text_x, r.center().y - galley.size().y / 2.0), galley, text_c);
+     if let Some(g) = sc {
+-        ui.painter().galley(pos2(r.max.x - pad.x - g.size().x, r.center().y - g.size().y / 2.0), g, t.text_disabled);
++        let sc_x = if rtl() { r.min.x + pad.x } else { r.max.x - pad.x - g.size().x };
++        ui.painter().galley(pos2(sc_x, r.center().y - g.size().y / 2.0), g, t.text_disabled);
+     }
+     resp
+ }
