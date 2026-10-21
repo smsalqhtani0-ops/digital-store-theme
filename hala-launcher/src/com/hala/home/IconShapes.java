@@ -38,6 +38,16 @@ final class IconShapes {
         return p;
     }
 
+    /** A full-bleed square drawing (Hala's own icons) cut to the squircle. */
+    static Bitmap renderFull(Drawable icon, int size) {
+        Bitmap b = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(b);
+        c.clipPath(squircle(size));
+        icon.setBounds(0, 0, size, size);
+        icon.draw(c);
+        return b;
+    }
+
     /** `icon` drawn in the squircle, `size` pixels square. */
     static Bitmap render(Drawable icon, int size) {
         Bitmap b = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);

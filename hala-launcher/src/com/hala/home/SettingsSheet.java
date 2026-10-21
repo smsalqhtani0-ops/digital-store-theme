@@ -30,6 +30,9 @@ final class SettingsSheet {
 
         void pickWallpaper();
 
+        /** Set one of Hala's own wallpapers (a raw drawable) on the home and lock screens. */
+        void applyWallpaper(int resId);
+
         void chooseDefaultHome();
 
         void dismissOverlay();
@@ -127,6 +130,22 @@ final class SettingsSheet {
         LinearLayout look = section(c, body, c.getString(R.string.section_look));
         look.addView(themeChoice(c, prefs, host));
         look.addView(divider(c));
+        look.addView(toggle(c, c.getString(R.string.themed_icons), c.getString(R.string.themed_icons_hint), prefs.themedIcons(), new Toggle() {
+            @Override
+            public void set(boolean on) {
+                prefs.setThemedIcons(on);
+                host.settingsChanged();
+            }
+        }));
+        look.addView(divider(c));
+        look.addView(toggle(c, c.getString(R.string.widgets), c.getString(R.string.widgets_hint), prefs.widgets(), new Toggle() {
+            @Override
+            public void set(boolean on) {
+                prefs.setWidgets(on);
+                host.settingsChanged();
+            }
+        }));
+        look.addView(divider(c));
         look.addView(toggle(c, c.getString(R.string.recent_apps), c.getString(R.string.recent_apps_hint), prefs.recents(), new Toggle() {
             @Override
             public void set(boolean on) {
@@ -138,12 +157,23 @@ final class SettingsSheet {
             }
         }));
 
-        // System: wallpaper and the default home app (the way back to the device's own).
-        LinearLayout system = section(c, body, c.getString(R.string.section_system));
-        system.addView(action(c, c.getString(R.string.wallpaper), null, new Runnable() {
+        // Wallpapers: Hala's own, or any picture through the system's picker.
+        LinearLayout walls = section(c, body, c.getString(R.string.section_wallpaper));
+        walls.addView(wallpapers(c, host));
+        walls.addView(divider(c));
+        walls.addView(action(c, c.getString(R.string.wallpaper), null, new Runnable() {
             @Override
             public void run() {
                 host.pickWallpaper();
+            }
+        }));
+
+        // System: the quick panel and the default home app (the way back to the device's own).
+        LinearLayout system = section(c, body, c.getString(R.string.section_system));
+        system.addView(toggle(c, c.getString(R.string.quick_panel), c.getString(R.string.quick_panel_hint), prefs.quickPanel(), new Toggle() {
+            @Override
+            public void set(boolean on) {
+                prefs.setQuickPanel(on);
             }
         }));
         system.addView(divider(c));
@@ -182,6 +212,37 @@ final class SettingsSheet {
     }
 
     // ---- Building blocks ----
+
+    private static final int[] WALLPAPERS = {R.drawable.wall_peach, R.drawable.wall_sky, R.drawable.wall_mint, R.drawable.wall_night};
+
+    /** Thumbnails of Hala's wallpapers; a tap sets one. */
+    private static View wallpapers(Context c, final Host host) {
+        LinearLayout r = new LinearLayout(c);
+        r.setPadding(Ui.dp(16), Ui.dp(14), Ui.dp(16), Ui.dp(14));
+        android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+        o.inSampleSize = 16;
+        for (int i = 0; i < WALLPAPERS.length; i++) {
+            final int id = WALLPAPERS[i];
+            android.widget.ImageView thumb = new android.widget.ImageView(c);
+            thumb.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+            thumb.setImageBitmap(android.graphics.BitmapFactory.decodeResource(c.getResources(), id, o));
+            thumb.setBackground(Ui.rounded(Ui.divider(), Ui.RADIUS_SMALL));
+            thumb.setClipToOutline(true);
+            thumb.setForeground(AppMenu.pressable(c));
+            thumb.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    host.applyWallpaper(id);
+                }
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(120), 1f);
+            if (i > 0) {
+                lp.setMarginStart(Ui.dp(10));
+            }
+            r.addView(thumb, lp);
+        }
+        return r;
+    }
 
     private interface Step {
         void set(int v);

@@ -43,7 +43,8 @@ import java.util.List;
  * it, long-press empty space for settings.
  */
 public final class HomeActivity extends Activity
-        implements AppRepository.Listener, CellLayout.Host, DrawerView.Host, SettingsSheet.Host, HomePager.Listener {
+        implements AppRepository.Listener, CellLayout.Host, DrawerView.Host, SettingsSheet.Host, HomePager.Listener,
+        Widgets.Host, QuickPanel.Host {
 
     /** One UI's standard easing: a quick start that settles gently. */
     private static final PathInterpolator EASE = new PathInterpolator(0.22f, 0.25f, 0f, 1f);
@@ -55,10 +56,13 @@ public final class HomeActivity extends Activity
     private AppRepository repo;
     private String themeApplied;
     private int iconDpApplied;
+    private boolean themedApplied;
     private String localeApplied;
     private int densityApplied;
 
     private HomeRoot root;
+    private Weather weather;
+    private FrameLayout header;
     private LinearLayout content;
     private HomePager pager;
     private LinearLayout dots;
@@ -87,14 +91,16 @@ public final class HomeActivity extends Activity
         prefs = new Prefs(this);
         themeApplied = prefs.theme();
         iconDpApplied = prefs.iconDp();
+        themedApplied = prefs.themedIcons();
         localeApplied = getResources().getConfiguration().getLocales().toLanguageTags();
         densityApplied = getResources().getConfiguration().densityDpi;
         Ui.init(this, themeApplied);
         getWindow().getDecorView().setSystemUiVisibility(
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
         repo = new AppRepository(this, this);
+        weather = new Weather(this);
         buildUi();
-        repo.load(iconPx());
+        repo.load(iconPx(), prefs.themedIcons());
     }
 
     @Override
@@ -107,8 +113,12 @@ public final class HomeActivity extends Activity
     @Override
     protected void onResume() {
         super.onResume();
-        // Recent apps change every time another app is used.
+        // Recent apps change every time another app is used; the calendar icon shows the date.
         buildDock();
+        repo.refreshIfNewDay();
+        // The brief follows the time of day and the battery; the weather refreshes every half hour.
+        buildHeader();
+        refreshWeather(false);
     }
 
     @Override
@@ -158,7 +168,7 @@ public final class HomeActivity extends Activity
             // App names come in the new language (and sort order); icons are drawn at the new density.
             localeApplied = locale;
             densityApplied = c.densityDpi;
-            repo.load(iconPx());
+            repo.load(iconPx(), prefs.themedIcons());
         }
         boolean settingsOpen = overlay.getVisibility() == View.VISIBLE && overlay.getTag() == SETTINGS_TAG;
         buildUi();
@@ -194,31 +204,9 @@ public final class HomeActivity extends Activity
         content.setOrientation(LinearLayout.VERTICAL);
         root.addView(content, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
-        // Clock and date, the way One UI's home and lock screens lead with the time.
-        TextClock clock = new TextClock(this);
-        clock.setFormat12Hour("h:mm");
-        clock.setFormat24Hour("HH:mm");
-        clock.setTextSize(landscape() ? 52 : 64);
-        clock.setTypeface(android.graphics.Typeface.create("sans-serif-light", android.graphics.Typeface.NORMAL));
-        Ui.onWallpaper(clock);
-        clock.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        cp.leftMargin = cp.rightMargin = Ui.dp(Ui.MARGIN + 8);
-        content.addView(clock, cp);
-        TextClock date = new TextClock(this);
-        date.setFormat12Hour("EEEE، d MMMM");
-        date.setFormat24Hour("EEEE، d MMMM");
-        if (!isArabic()) {
-            date.setFormat12Hour("EEEE, d MMMM");
-            date.setFormat24Hour("EEEE, d MMMM");
-        }
-        date.setTextSize(16);
-        Ui.onWallpaper(date);
-        date.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-        LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        dp.leftMargin = dp.rightMargin = Ui.dp(Ui.MARGIN + 10);
-        dp.bottomMargin = Ui.dp(12);
-        content.addView(date, dp);
+        header = new FrameLayout(this);
+        content.addView(header, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
 
         pager = new HomePager(this);
         pager.setListener(this);
@@ -278,9 +266,175 @@ public final class HomeActivity extends Activity
         setContentView(root);
         root.requestApplyInsets();
         updateBars();
+        buildHeader();
         rebuildHome();
         buildDock();
         drawer.setApps(repo.all(), iconPx(), prefs.labels());
+    }
+
+    /** The top of the home screen: the widget cards, or (with them off) a large clock and date. */
+    private void buildHeader() {
+        if (header == null) {
+            return;
+        }
+        header.removeAllViews();
+        if (prefs.widgets()) {
+            LinearLayout row = Widgets.row(this, this, weather);
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.START);
+            lp.setMarginStart(Ui.dp(Ui.MARGIN));
+            lp.bottomMargin = Ui.dp(12);
+            lp.topMargin = Ui.dp(4);
+            header.addView(row, lp);
+            return;
+        }
+        // Clock and date, the way One UI's home and lock screens lead with the time.
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        TextClock clock = new TextClock(this);
+        clock.setFormat12Hour("h:mm");
+        clock.setFormat24Hour("HH:mm");
+        clock.setTextSize(landscape() ? 52 : 64);
+        clock.setTypeface(android.graphics.Typeface.create("sans-serif-light", android.graphics.Typeface.NORMAL));
+        Ui.onWallpaper(clock);
+        clock.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+        col.addView(clock);
+        TextClock date = new TextClock(this);
+        String pattern = isArabic() ? "EEEE، d MMMM" : "EEEE, d MMMM";
+        date.setFormat12Hour(pattern);
+        date.setFormat24Hour(pattern);
+        date.setTextSize(16);
+        Ui.onWallpaper(date);
+        date.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+        date.setPadding(Ui.dp(2), 0, 0, 0);
+        col.addView(date);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        lp.leftMargin = lp.rightMargin = Ui.dp(Ui.MARGIN + 8);
+        lp.bottomMargin = Ui.dp(12);
+        header.addView(col, lp);
+    }
+
+    private void refreshWeather(boolean force) {
+        if (!prefs.widgets()) {
+            return;
+        }
+        weather.refresh(force, new Weather.Listener() {
+            @Override
+            public void onWeather(Weather w) {
+                buildHeader();
+            }
+        });
+    }
+
+    // ---- Widget cards ----
+
+    @Override
+    public void weatherTapped() {
+        if (!weather.permitted()) {
+            requestPermissions(new String[] {android.Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_LOCATION);
+            return;
+        }
+        // With the weather showing, open the device's weather app; else try again now.
+        Intent app = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_WEATHER);
+        if (weather.known && getPackageManager().resolveActivity(app, 0) != null) {
+            start(app.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        } else {
+            refreshWeather(true);
+        }
+    }
+
+    @Override
+    public void openClock() {
+        start(new Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS));
+    }
+
+    @Override
+    public void openCalendar() {
+        start(Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_CALENDAR).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+    }
+
+    private static final int REQUEST_LOCATION = 7;
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode == REQUEST_LOCATION) {
+            buildHeader();
+            refreshWeather(true);
+        }
+    }
+
+    // ---- Quick panel ----
+
+    private void showQuickPanel() {
+        if (overlay.getWidth() == 0) {
+            overlay.post(new Runnable() {
+                @Override
+                public void run() {
+                    showQuickPanel();
+                }
+            });
+            return;
+        }
+        QuickPanel.show(overlay, this, insets.top);
+        overlay.setTag(QUICK_TAG);
+        updateBars();
+    }
+
+    private static final Object QUICK_TAG = new Object();
+
+    @Override
+    public boolean darkTheme() {
+        return Ui.dark;
+    }
+
+    @Override
+    public void setDarkTheme(boolean dark) {
+        prefs.setTheme(dark ? "dark" : "light");
+        applyTheme();
+        showQuickPanel();
+    }
+
+    @Override
+    public void openHomeSettings() {
+        dismissOverlay();
+        showSettings();
+    }
+
+    /** Rebuild the whole screen in the theme the preference now names. */
+    private void applyTheme() {
+        themeApplied = prefs.theme();
+        Ui.init(this, themeApplied);
+        buildUi();
+    }
+
+    @Override
+    public void applyWallpaper(final int resId) {
+        final android.app.WallpaperManager wm = android.app.WallpaperManager.getInstance(this);
+        Toast.makeText(this, R.string.wallpaper_setting, Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean ok;
+                try {
+                    java.io.InputStream in = getResources().openRawResource(resId);
+                    try {
+                        wm.setStream(in, null, true, android.app.WallpaperManager.FLAG_SYSTEM | android.app.WallpaperManager.FLAG_LOCK);
+                    } finally {
+                        in.close();
+                    }
+                    ok = true;
+                } catch (Exception e) {
+                    ok = false;
+                }
+                final boolean done = ok;
+                main.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(HomeActivity.this, done ? R.string.wallpaper_done : R.string.wallpaper_failed, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }, "hala-wallpaper").start();
     }
 
     private boolean isArabic() {
@@ -561,7 +715,8 @@ public final class HomeActivity extends Activity
         start(i);
     }
 
-    private void start(Intent i) {
+    @Override
+    public void start(Intent i) {
         try {
             startActivity(i);
         } catch (ActivityNotFoundException e) {
@@ -1000,7 +1155,8 @@ public final class HomeActivity extends Activity
         getWindow().getDecorView().setSystemUiVisibility(flags);
     }
 
-    private void expandNotifications() {
+    @Override
+    public void expandNotifications() {
         try {
             Object sb = getSystemService("statusbar");
             Class.forName("android.app.StatusBarManager").getMethod("expandNotificationsPanel").invoke(sb);
@@ -1044,20 +1200,21 @@ public final class HomeActivity extends Activity
         int icon = prefs.iconDp();
         if (!theme.equals(themeApplied)) {
             // A new theme recolours everything, the settings sheet included.
-            themeApplied = theme;
-            Ui.init(this, theme);
-            buildUi();
+            applyTheme();
             showSettings();
             return;
         }
-        if (icon != iconDpApplied) {
+        if (icon != iconDpApplied || prefs.themedIcons() != themedApplied) {
             iconDpApplied = icon;
+            themedApplied = prefs.themedIcons();
             dock.setMinimumHeight(iconPx() + Ui.dp(20));
             // Icons are drawn at their size: load them again (the layout follows when they arrive).
-            repo.load(iconPx());
+            repo.load(iconPx(), prefs.themedIcons());
         }
         rebuildHome();
         buildDock();
+        buildHeader();
+        refreshWeather(false);
         drawer.setApps(repo.all(), iconPx(), prefs.labels());
     }
 
@@ -1174,7 +1331,13 @@ public final class HomeActivity extends Activity
                 drawer.setVisibility(View.VISIBLE);
             } else {
                 handled = true;
-                expandNotifications();
+                // Right half: Hala's quick panel (left half in Arabic); the other half: notifications.
+                boolean endHalf = getLayoutDirection() == View.LAYOUT_DIRECTION_RTL ? downX < getWidth() / 2f : downX > getWidth() / 2f;
+                if (prefs.quickPanel() && endHalf) {
+                    showQuickPanel();
+                } else {
+                    expandNotifications();
+                }
             }
             return true;
         }

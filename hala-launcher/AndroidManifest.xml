@@ -6,6 +6,16 @@
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <!-- Recent apps in the dock; the person grants it in Settings › Usage access. -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
+    <!-- The weather card: approximate location, sent to Open-Meteo for the forecast. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Hala's wallpapers. -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <!-- The quick panel: Wi-Fi and Bluetooth state, Do not disturb, brightness and rotation. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <!-- The long-press menu's Uninstall. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 

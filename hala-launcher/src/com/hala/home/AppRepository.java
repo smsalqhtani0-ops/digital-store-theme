@@ -37,7 +37,10 @@ final class AppRepository {
     private volatile List<AppInfo> apps = new ArrayList<AppInfo>();
     private volatile Map<String, AppInfo> byKey = new HashMap<String, AppInfo>();
     private int iconPx;
+    private boolean themed;
     private int generation;
+    /** The day the icons were drawn (the calendar icon shows the date). */
+    private int loadedDay = -1;
 
     private final LauncherApps.Callback callback = new LauncherApps.Callback() {
         @Override
@@ -101,9 +104,17 @@ final class AppRepository {
     }
 
     /** Load again at `iconPx` pixels per icon (icon size changes re-render every icon). */
-    void load(int iconPx) {
+    void load(int iconPx, boolean themed) {
         this.iconPx = iconPx;
+        this.themed = themed;
         reload();
+    }
+
+    /** Draw the icons again if the date changed since they were drawn. */
+    void refreshIfNewDay() {
+        if (loadedDay != java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR)) {
+            reload();
+        }
     }
 
     private void reload() {
@@ -112,10 +123,12 @@ final class AppRepository {
             gen = ++generation;
         }
         final int px = iconPx;
+        final boolean withThemes = themed;
+        loadedDay = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR);
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final List<AppInfo> list = query(px);
+                final List<AppInfo> list = query(px, withThemes);
                 main.post(new Runnable() {
                     @Override
                     public void run() {
@@ -137,9 +150,10 @@ final class AppRepository {
         }, "hala-apps").start();
     }
 
-    private List<AppInfo> query(int px) {
+    private List<AppInfo> query(int px, boolean withThemes) {
         List<AppInfo> out = new ArrayList<AppInfo>();
         String self = context.getPackageName();
+        ThemedIcons themes = withThemes ? new ThemedIcons(context) : null;
         for (UserHandle user : launcherApps.getProfiles()) {
             long serial = userManager.getSerialNumberForUser(user);
             List<LauncherActivityInfo> infos;
@@ -147,6 +161,12 @@ final class AppRepository {
                 infos = launcherApps.getActivityList(null, user);
             } catch (RuntimeException e) {
                 continue;
+            }
+            Map<String, Integer> perPackage = new HashMap<String, Integer>();
+            for (LauncherActivityInfo info : infos) {
+                String pkg = info.getComponentName().getPackageName();
+                Integer n = perPackage.get(pkg);
+                perPackage.put(pkg, n == null ? 1 : n + 1);
             }
             for (LauncherActivityInfo info : infos) {
                 ComponentName cn = info.getComponentName();
@@ -158,9 +178,17 @@ final class AppRepository {
                 String label = String.valueOf(info.getLabel());
                 AppInfo app = new AppInfo(cn, user, serial, label, system);
                 try {
-                    // Work-profile apps carry the system's badge.
-                    Drawable d = info.getBadgedIcon(0);
-                    app.icon = IconShapes.render(d, Math.max(px, 1));
+                    // Built-in apps of the main profile can take Hala's own icon; work-profile
+                    // apps keep theirs, which carries the system's badge.
+                    String name = null;
+                    if (themes != null && user.equals(android.os.Process.myUserHandle())) {
+                        name = themes.nameFor(info, perPackage.get(cn.getPackageName()) > 1);
+                    }
+                    app.icon = name == null ? null : themes.render(name, Math.max(px, 1));
+                    if (app.icon == null) {
+                        Drawable d = info.getBadgedIcon(0);
+                        app.icon = IconShapes.render(d, Math.max(px, 1));
+                    }
                 } catch (RuntimeException e) {
                     app.icon = null;
                 }

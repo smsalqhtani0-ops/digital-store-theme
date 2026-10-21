@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="2560" viewBox="0 0 2560 2560">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0.00" stop-color="#CBE7FF"/><stop offset="0.33" stop-color="#9EC3FF"/><stop offset="0.67" stop-color="#8F9CFB"/><stop offset="1.00" stop-color="#A07FEE"/></linearGradient>
+  <radialGradient id="glow" cx="0.25" cy="0.15" r="0.7">
+    <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.28"/>
+    <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+  </radialGradient>
+  <filter id="lift" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="15.36" stdDeviation="46.08" flood-color="#3C4FB0" flood-opacity="0.18"/>
+  </filter>
+</defs>
+<rect width="2560" height="2560" fill="url(#bg)"/>
+<rect width="2560" height="2560" fill="url(#glow)"/>
+<path d="M862.4,0.5 Q1536.0,-489.0 2209.6,0.5 L2447.4,173.2 Q3121.0,662.6 2863.7,1454.5 L2772.9,1734.0 Q2515.6,2525.9 1682.9,2525.9 L1389.1,2525.9 Q556.4,2525.9 299.1,1734.0 L208.3,1454.5 Q-49.0,662.6 624.6,173.2 Z" fill="#FFFFFF" fill-opacity="0.08" filter="url(#lift)"/>
+<path d="M1141.9,139.0 Q1749.5,-170.6 2231.8,311.6 L2402.0,481.8 Q2884.2,964.1 2574.6,1571.7 L2465.3,1786.2 Q2155.7,2393.8 1482.1,2287.1 L1244.4,2249.5 Q570.8,2142.8 464.1,1469.2 L426.5,1231.5 Q319.8,557.9 927.4,248.3 Z" fill="#FFFFFF" fill-opacity="0.09" filter="url(#lift)"/>
+<path d="M1356.7,317.8 Q1869.5,151.1 2186.5,587.4 L2298.3,741.3 Q2615.3,1177.6 2298.3,1613.9 L2186.5,1767.8 Q1869.5,2204.1 1356.7,2037.4 L1175.7,1978.6 Q662.8,1812.0 662.8,1272.8 L662.8,1082.4 Q662.8,543.2 1175.7,376.6 Z" fill="#FFFFFF" fill-opacity="0.10" filter="url(#lift)"/>
+<path d="M1504.0,519.6 Q1903.5,456.4 2087.1,816.7 L2151.9,943.9 Q2335.5,1304.2 2049.5,1590.2 L1948.6,1691.1 Q1662.6,1977.1 1302.3,1793.5 L1175.1,1728.7 Q814.8,1545.1 878.0,1145.6 L900.4,1004.7 Q963.6,605.2 1363.1,542.0 Z" fill="#FFFFFF" fill-opacity="0.11" filter="url(#lift)"/>
+<path d="M1585.0,728.2 Q1862.5,728.2 1948.3,992.1 L1978.6,1085.3 Q2064.3,1349.3 1839.8,1512.4 L1760.5,1570.0 Q1536.0,1733.1 1311.5,1570.0 L1232.2,1512.4 Q1007.7,1349.3 1093.4,1085.3 L1123.7,992.1 Q1209.5,728.2 1487.0,728.2 Z" fill="#FFFFFF" fill-opacity="0.12" filter="url(#lift)"/>
+</svg>

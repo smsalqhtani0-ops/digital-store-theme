@@ -73,6 +73,33 @@ final class Prefs {
         sp.edit().putString("theme", theme).apply();
     }
 
+    /** Hala's One UI-style icons for the device's built-in apps. */
+    boolean themedIcons() {
+        return sp.getBoolean("themedIcons", true);
+    }
+
+    void setThemedIcons(boolean on) {
+        sp.edit().putBoolean("themedIcons", on).apply();
+    }
+
+    /** The clock, weather and brief cards at the top of the home screen. */
+    boolean widgets() {
+        return sp.getBoolean("widgets", true);
+    }
+
+    void setWidgets(boolean on) {
+        sp.edit().putBoolean("widgets", on).apply();
+    }
+
+    /** A swipe down on the right half opens Hala's quick panel (the left half, notifications). */
+    boolean quickPanel() {
+        return sp.getBoolean("quickPanel", true);
+    }
+
+    void setQuickPanel(boolean on) {
+        sp.edit().putBoolean("quickPanel", on).apply();
+    }
+
     boolean recents() {
         return sp.getBoolean("recents", true);
     }

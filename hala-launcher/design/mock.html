@@ -1,0 +1,44 @@
+<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><style>@font-face{font-family:HalaAr;src:url(file:///home/user/src/craft-fonts/fonts/noto-sans-arabic/NotoSansArabic.ttf)}
+body{margin:0;font-family:HalaAr,sans-serif;}
+.screen{position:relative;width:1280px;height:800px;overflow:hidden;background:url(../res/drawable-nodpi/wall_peach.webp) center/cover;}
+.status{position:absolute;top:0;left:0;right:0;height:32px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;color:#fff;font-size:14px;text-shadow:0 1px 2px #0004}
+.widgets{position:absolute;top:52px;right:24px;display:flex;gap:16px}
+.card{width:164px;height:164px;border-radius:26px;box-sizing:border-box;padding:16px 18px;display:flex;flex-direction:column;box-shadow:0 3px 10px #0002}
+.clock{background:#ffffffe6}.clock b{font:300 44px sans-serif;color:#000}.clock p{margin:0;color:#6e6e6e;font-size:15px;line-height:1.35}
+.wx{background:linear-gradient(135deg,#5db8ff,#2e78ee);color:#fff}.wx .t{display:flex;justify-content:space-between;flex:1}.wx b{font:300 36px sans-serif}
+.wx .sun{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#ffe27a,#ffb627);margin-top:4px}
+.brief{background:#ffffffe6}.brief .dot{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7be0c3,#2bb5a0);flex:none}
+.brief h4{margin:auto 0 2px;font-size:16px;font-weight:600}.brief p{margin:0;font-size:13px;color:#6e6e6e}.brief em{font-style:normal;color:#0072de;font-size:12px;font-weight:600}
+.grid{position:absolute;top:250px;right:16px;left:16px;display:grid;grid-template-columns:repeat(7,1fr);row-gap:22px}
+.app{display:flex;flex-direction:column;align-items:center;color:#fff;font-size:13px;text-shadow:0 1px 3px #0006}
+.app img,.dock img{width:64px;height:64px;clip-path:polygon(100.00% 50.00%,99.95% 62.79%,99.79% 68.06%,99.52% 72.08%,99.14% 75.44%,98.66% 78.35%,98.06% 80.93%,97.35% 83.25%,96.53% 85.36%,95.59% 87.27%,94.54% 89.01%,93.35% 90.60%,92.04% 92.04%,90.60% 93.35%,89.01% 94.54%,87.27% 95.59%,85.36% 96.53%,83.25% 97.35%,80.93% 98.06%,78.35% 98.66%,75.44% 99.14%,72.08% 99.52%,68.06% 99.79%,62.79% 99.95%,50.00% 100.00%,37.21% 99.95%,31.94% 99.79%,27.92% 99.52%,24.56% 99.14%,21.65% 98.66%,19.07% 98.06%,16.75% 97.35%,14.64% 96.53%,12.73% 95.59%,10.99% 94.54%,9.40% 93.35%,7.96% 92.04%,6.65% 90.60%,5.46% 89.01%,4.41% 87.27%,3.47% 85.36%,2.65% 83.25%,1.94% 80.93%,1.34% 78.35%,0.86% 75.44%,0.48% 72.08%,0.21% 68.06%,0.05% 62.79%,0.00% 50.00%,0.05% 37.21%,0.21% 31.94%,0.48% 27.92%,0.86% 24.56%,1.34% 21.65%,1.94% 19.07%,2.65% 16.75%,3.47% 14.64%,4.41% 12.73%,5.46% 10.99%,6.65% 9.40%,7.96% 7.96%,9.40% 6.65%,10.99% 5.46%,12.73% 4.41%,14.64% 3.47%,16.75% 2.65%,19.07% 1.94%,21.65% 1.34%,24.56% 0.86%,27.92% 0.48%,31.94% 0.21%,37.21% 0.05%,50.00% 0.00%,62.79% 0.05%,68.06% 0.21%,72.08% 0.48%,75.44% 0.86%,78.35% 1.34%,80.93% 1.94%,83.25% 2.65%,85.36% 3.47%,87.27% 4.41%,89.01% 5.46%,90.60% 6.65%,92.04% 7.96%,93.35% 9.40%,94.54% 10.99%,95.59% 12.73%,96.53% 14.64%,97.35% 16.75%,98.06% 19.07%,98.66% 21.65%,99.14% 24.56%,99.52% 27.92%,99.79% 31.94%,99.95% 37.21%,100.00% 50.00%);margin-bottom:6px}
+.dots{position:absolute;bottom:118px;left:0;right:0;display:flex;justify-content:center;gap:8px}.dots i{width:6px;height:6px;border-radius:4px;background:#fff8}.dots i.on{width:8px;height:8px;background:#fff}
+.dock{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;padding:12px 18px;border-radius:26px;background:#f7f7f7b3;backdrop-filter:blur(8px)}
+.dock img{margin:0}.dock .sep{width:1px;height:48px;background:#0003}
+.qp{position:absolute;top:42px;left:16px;width:400px;border-radius:26px;background:#f6f6f8eb;box-shadow:0 12px 30px #0003;padding:14px 16px 16px;box-sizing:border-box}
+.qp .head{display:flex;align-items:center;justify-content:space-between;font-size:15px}.qp .head span img{width:22px;margin:0 8px;opacity:.85}
+.row{display:flex;gap:10px;margin-top:12px}.big{flex:1;height:60px;border-radius:30px;background:#fff;display:flex;align-items:center;padding:0 8px;gap:10px}
+.big b{font-size:14px;display:block}.big small{color:#6e6e6e;font-size:12px}
+.g{width:44px;height:44px;border-radius:22px;background:#0000001f;display:flex;align-items:center;justify-content:center;flex:none}.g img{width:22px}
+.g.on{background:#0381fe}.g.on img{filter:invert(1)}
+.rounds{display:flex;margin-top:14px}.rt{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}.rt .g{width:52px;height:52px;border-radius:26px;background:#fff}.rt .g.on{background:#0381fe}
+.rt small{font-size:11px;color:#6e6e6e}
+.slider{height:48px;border-radius:24px;background:#fff;margin-top:10px;position:relative;overflow:hidden}.slider i{position:absolute;top:0;bottom:0;right:0;border-radius:24px;background:#dce6f7}
+.slider img{position:absolute;right:13px;top:13px;width:22px}
+</style></head><body><div class="screen">
+<div class="status"><span>12:45</span><span>٨٠٪</span></div>
+<div class="widgets">
+ <div class="card clock"><b>12:45</b><p>الثلاثاء<br>21 أكتوبر</p></div>
+ <div class="card wx"><div class="t"><b>31°</b><i class="sun"></i></div><strong style="font-size:14px">صافٍ</strong><small style="opacity:.85">↑ 34°   ↓ 24°</small><small style="opacity:.85">الرياض</small></div>
+ <div class="card brief"><i class="dot"></i><h4>ملخص الظهيرة</h4><p>استمتع ببقية يومك.</p><em>البطارية 80٪</em></div>
+</div>
+<div class="grid"><div class="app"><img src="icons/camera.svg"><span>الكاميرا</span></div><div class="app"><img src="icons/gallery.svg"><span>الاستوديو</span></div><div class="app"><img src="icons/settings.svg"><span>الإعدادات</span></div><div class="app"><img src="icons/messages.svg"><span>الرسائل</span></div><div class="app"><img src="icons/contacts.svg"><span>جهات الاتصال</span></div><div class="app"><img src="icons/notes.svg"><span>الملاحظات</span></div><div class="app"><img src="icons/clock.svg"><span>الساعة</span></div><div class="app"><img src="icons/files.svg"><span>ملفاتي</span></div><div class="app"><img src="icons/calculator.svg"><span>الحاسبة</span></div><div class="app"><img src="icons/music.svg"><span>الموسيقى</span></div><div class="app"><img src="icons/email.svg"><span>البريد</span></div><div class="app"><img src="icons/recorder.svg"><span>المسجل</span></div><div class="app"><img src="icons/weather.svg"><span>الطقس</span></div><div class="app"><img src="icons/themes.svg"><span>السمات</span></div></div>
+<div class="dots"><i class="on"></i><i></i><i></i></div>
+<div class="dock"><img src="icons/phone.svg"><img src="icons/browser.svg"><img src="icons/gallery.svg"><img src="icons/camera.svg"><img src="icons/video.svg"><img src="icons/settings.svg"><i class="sep"></i><img src="icons/notes.svg"><img src="icons/files.svg"><img src="icons/maps.svg"></div>
+<div class="qp"><div class="head"><span>12:45 · الثلاثاء 21 أكتوبر</span><span><img src="glyphs/bell.svg"><img src="glyphs/gear.svg"></span></div>
+<div class="row"><div class="big"><span class="g on"><img src="glyphs/wifi.svg"></span><div><b>Wi-Fi</b><small>يعمل</small></div></div><div class="big"><span class="g "><img src="glyphs/bluetooth.svg"></span><div><b>بلوتوث</b><small>متوقف</small></div></div></div>
+<div class="rounds"><div class="rt"><span class="g "><img src="glyphs/flashlight.svg"></span><small>الكشاف</small></div><div class="rt"><span class="g on"><img src="glyphs/rotate.svg"></span><small>تدوير تلقائي</small></div><div class="rt"><span class="g "><img src="glyphs/dnd.svg"></span><small>عدم الإزعاج</small></div><div class="rt"><span class="g on"><img src="glyphs/location.svg"></span><small>الموقع</small></div><div class="rt"><span class="g "><img src="glyphs/airplane.svg"></span><small>الطيران</small></div></div>
+<div class="slider"><i style="width:68%"></i><img src="glyphs/brightness.svg"></div>
+<div class="slider"><i style="width:45%"></i><img src="glyphs/volume.svg"></div>
+<div class="row"><div class="big"><span class="g "><img src="glyphs/moon.svg"></span><div><b>الوضع الداكن</b><small>متوقف</small></div></div><div class="big"><span class="g "><img src="glyphs/home.svg"></span><div><b>إعدادات الرئيسية</b><small>متوقف</small></div></div></div>
+</div></div></body></html>
