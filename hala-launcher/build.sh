@@ -5,8 +5,8 @@
 set -Eeuo pipefail
 HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE"
-VERSION_CODE=1
-VERSION_NAME=1.0
+VERSION_CODE=2
+VERSION_NAME=1.1
 ANDROID_JAR="${ANDROID_JAR:-${ANDROID_HOME:?set ANDROID_HOME or ANDROID_JAR}/platforms/android-35/android.jar}"
 OUT=build
 rm -rf "$OUT"

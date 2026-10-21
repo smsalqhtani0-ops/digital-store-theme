@@ -81,18 +81,24 @@ final class Prefs {
         sp.edit().putBoolean("recents", on).apply();
     }
 
-    /** Home slots in order; `null` is an empty slot. */
-    List<String> home() {
+    /**
+     * Home slots in order for one orientation (each has its own grid, so each keeps its own
+     * arrangement); `null` is an empty slot. Landscape starts as a copy of portrait.
+     */
+    List<String> home(boolean landscape) {
+        if (landscape && sp.contains("homeLand")) {
+            return read("homeLand", true);
+        }
         return read("home", true);
     }
 
-    void setHome(List<String> slots) {
+    void setHome(boolean landscape, List<String> slots) {
         // Trailing empty slots are dropped; pages are rebuilt from the slot count.
         int end = slots.size();
         while (end > 0 && slots.get(end - 1) == null) {
             end--;
         }
-        write("home", slots.subList(0, end));
+        write(landscape ? "homeLand" : "home", slots.subList(0, end));
     }
 
     List<String> dock() {

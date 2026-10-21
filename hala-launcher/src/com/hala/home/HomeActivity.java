@@ -55,6 +55,8 @@ public final class HomeActivity extends Activity
     private AppRepository repo;
     private String themeApplied;
     private int iconDpApplied;
+    private String localeApplied;
+    private int densityApplied;
 
     private HomeRoot root;
     private LinearLayout content;
@@ -85,6 +87,8 @@ public final class HomeActivity extends Activity
         prefs = new Prefs(this);
         themeApplied = prefs.theme();
         iconDpApplied = prefs.iconDp();
+        localeApplied = getResources().getConfiguration().getLocales().toLanguageTags();
+        densityApplied = getResources().getConfiguration().densityDpi;
         Ui.init(this, themeApplied);
         getWindow().getDecorView().setSystemUiVisibility(
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
@@ -120,6 +124,12 @@ public final class HomeActivity extends Activity
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         // The Home button while already home: close what is open, else go to the first page.
+        // Coming back from an app also arrives here, and then the screen stays as it was.
+        boolean alreadyHome = hasWindowFocus()
+            && (intent.getFlags() & Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) != Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT;
+        if (!alreadyHome) {
+            return;
+        }
         if (overlay.getVisibility() == View.VISIBLE) {
             dismissOverlay();
         } else if (drawerOpen) {
@@ -142,7 +152,14 @@ public final class HomeActivity extends Activity
     @Override
     public void onConfigurationChanged(Configuration c) {
         super.onConfigurationChanged(c);
+        String locale = c.getLocales().toLanguageTags();
         Ui.init(this, prefs.theme());
+        if (!locale.equals(localeApplied) || c.densityDpi != densityApplied) {
+            // App names come in the new language (and sort order); icons are drawn at the new density.
+            localeApplied = locale;
+            densityApplied = c.densityDpi;
+            repo.load(iconPx());
+        }
         boolean settingsOpen = overlay.getVisibility() == View.VISIBLE && overlay.getTag() == SETTINGS_TAG;
         buildUi();
         if (settingsOpen) {
@@ -216,13 +233,19 @@ public final class HomeActivity extends Activity
         // The dock: a rounded glass bar holding pinned apps, a divider and recent apps.
         dockArea = new FrameLayout(this);
         dockArea.setPadding(Ui.dp(Ui.MARGIN), Ui.dp(6), Ui.dp(Ui.MARGIN), Ui.dp(14));
+        // It scrolls sideways when more apps are pinned than the width holds.
+        android.widget.HorizontalScrollView dockScroll = new android.widget.HorizontalScrollView(this);
+        dockScroll.setHorizontalScrollBarEnabled(false);
+        dockScroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        dockScroll.setBackground(Ui.rounded(Ui.glass(), Ui.RADIUS_BLOCK));
+        dockScroll.setClipToOutline(true);
         dock = new LinearLayout(this);
         dock.setGravity(Gravity.CENTER_VERTICAL);
-        dock.setBackground(Ui.rounded(Ui.glass(), Ui.RADIUS_BLOCK));
         dock.setPadding(Ui.dp(14), Ui.dp(10), Ui.dp(14), Ui.dp(10));
         dock.setMinimumHeight(iconPx() + Ui.dp(20));
         dock.setMinimumWidth(Ui.dp(200));
-        dockArea.addView(dock, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+        dockScroll.addView(dock, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT));
+        dockArea.addView(dockScroll, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
         dockArea.setOnDragListener(new View.OnDragListener() {
             @Override
             public boolean onDrag(View v, DragEvent e) {
@@ -283,7 +306,7 @@ public final class HomeActivity extends Activity
         int cols = prefs.columns(land);
         int rows = prefs.rows(land);
         int perPage = cols * rows;
-        List<String> slots = prefs.home();
+        List<String> slots = prefs.home(land);
         int pages = Math.max(1, (slots.size() + perPage - 1) / perPage);
         // Drop pages that are entirely empty past the first.
         while (pages > 1 && pageEmpty(slots, pages - 1, perPage)) {
@@ -330,9 +353,7 @@ public final class HomeActivity extends Activity
         v.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                int[] at = new int[2];
-                v.getLocationOnScreen(at);
-                longPress(v, from, index, at[0] + v.getWidth() / 2f, at[1] + v.getHeight() / 2f);
+                longPress(v, from, index, v.downX, v.downY);
                 return true;
             }
         });
@@ -482,7 +503,8 @@ public final class HomeActivity extends Activity
         homeKeys.removeAll(dockKeys);
         // Saving (even an empty layout) marks the first run as done.
         prefs.setDock(dockKeys);
-        prefs.setHome(homeKeys);
+        prefs.setHome(false, homeKeys);
+        prefs.setHome(true, homeKeys);
     }
 
     private void addDefault(List<String> into, Intent intent) {
@@ -559,11 +581,12 @@ public final class HomeActivity extends Activity
             items.add(new AppMenu.Item(getString(R.string.remove), new Runnable() {
                 @Override
                 public void run() {
-                    List<String> home = prefs.home();
+                    List<String> home = home();
                     if (index < home.size()) {
                         home.set(index, null);
-                        prefs.setHome(home);
+                        saveHome(home);
                     }
+                    removeFromOtherLayout(app.key);
                     rebuildHome();
                 }
             }));
@@ -623,10 +646,16 @@ public final class HomeActivity extends Activity
         // The same press can carry on into a drag: moving the finger closes the menu.
         drag = new DragPayload(app, from, index, x, y);
         addSparePage();
+        boolean started;
         try {
-            v.startDragAndDrop(ClipData.newPlainText(app.label, app.key), new View.DragShadowBuilder(v.icon), drag, 0);
+            started = v.startDragAndDrop(ClipData.newPlainText(app.label, app.key), new View.DragShadowBuilder(v.icon), drag, 0);
         } catch (RuntimeException e) {
+            started = false;
+        }
+        if (!started) {
+            // A long press from a keyboard or accessibility action has no finger to drag with.
             drag = null;
+            rebuildHome();
         }
     }
 
@@ -689,7 +718,7 @@ public final class HomeActivity extends Activity
         if (!p.moved) {
             return;
         }
-        List<String> home = prefs.home();
+        List<String> home = home();
         pad(home, Math.max(slot, p.index) + 1);
         String key = p.app.key;
         String there = home.get(slot);
@@ -705,6 +734,7 @@ public final class HomeActivity extends Activity
             if (p.index < d.size()) {
                 if (there != null) {
                     d.set(p.index, there);
+                    removeFromOtherLayout(there);
                 } else {
                     d.remove(p.index);
                 }
@@ -721,21 +751,58 @@ public final class HomeActivity extends Activity
             if (there == null) {
                 home.set(slot, key);
             } else {
-                home.set(freeSlotFrom(home, slot), key);
+                int free = freeSlotFrom(home, slot);
+                pad(home, free + 1);
+                home.set(free, key);
             }
         }
-        prefs.setHome(home);
+        saveHome(home);
+        if (p.from != DragPayload.HOME) {
+            addToOtherLayout(key);
+        }
+    }
+
+    private List<String> home() {
+        return prefs.home(landscape());
+    }
+
+    private void saveHome(List<String> home) {
+        prefs.setHome(landscape(), home);
+    }
+
+    /** Adding an app to the home screen puts it in the other orientation's layout too. */
+    private void addToOtherLayout(String key) {
+        boolean other = !landscape();
+        List<String> home = prefs.home(other);
+        if (!home.contains(key)) {
+            int free = freeSlotFrom(home, 0);
+            pad(home, free + 1);
+            home.set(free, key);
+            prefs.setHome(other, home);
+        }
+    }
+
+    /** Removing an app from the home screen takes it out of the other orientation's layout too. */
+    private void removeFromOtherLayout(String key) {
+        boolean other = !landscape();
+        List<String> home = prefs.home(other);
+        int at = home.indexOf(key);
+        if (at >= 0) {
+            home.set(at, null);
+            prefs.setHome(other, home);
+        }
     }
 
     private void addToHome(AppInfo app) {
-        List<String> home = prefs.home();
+        List<String> home = home();
         if (home.contains(app.key)) {
             return;
         }
         int slot = freeSlotFrom(home, 0);
         pad(home, slot + 1);
         home.set(slot, app.key);
-        prefs.setHome(home);
+        saveHome(home);
+        addToOtherLayout(app.key);
         rebuildHome();
         boolean land = landscape();
         pager.snapTo(slot / (prefs.columns(land) * prefs.rows(land)), true);
@@ -840,11 +907,12 @@ public final class HomeActivity extends Activity
                 return;
             }
             if (p.from == DragPayload.HOME) {
-                List<String> home = prefs.home();
+                List<String> home = home();
                 if (p.index < home.size()) {
                     home.set(p.index, null);
-                    prefs.setHome(home);
+                    saveHome(home);
                 }
+                removeFromOtherLayout(key);
             }
         }
         d.add(Math.max(0, Math.min(d.size(), pos)), key);
@@ -1100,6 +1168,7 @@ public final class HomeActivity extends Activity
             }
             if (dy < 0) {
                 opening = true;
+                drawer.animate().cancel();
                 drawer.setTranslationY(getHeight());
                 drawer.setApps(repo.all(), iconPx(), prefs.labels());
                 drawer.setVisibility(View.VISIBLE);

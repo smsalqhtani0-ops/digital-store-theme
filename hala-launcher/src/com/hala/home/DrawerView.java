@@ -215,7 +215,12 @@ final class DrawerView extends FrameLayout {
         if (velocity == null) {
             velocity = android.view.VelocityTracker.obtain();
         }
-        velocity.addMovement(e);
+        // The drawer moves with the finger, so its own coordinates hardly change: track the
+        // finger on the screen.
+        MotionEvent onScreen = MotionEvent.obtain(e);
+        onScreen.setLocation(e.getRawX(), e.getRawY());
+        velocity.addMovement(onScreen);
+        onScreen.recycle();
         switch (e.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 downY = e.getY();
@@ -276,9 +281,7 @@ final class DrawerView extends FrameLayout {
             v.setOnLongClickListener(new OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View view) {
-                    int[] at = new int[2];
-                    v.getLocationOnScreen(at);
-                    host.longPress(v, DragPayload.DRAWER, -1, at[0] + v.getWidth() / 2f, at[1] + v.getHeight() / 2f);
+                    host.longPress(v, DragPayload.DRAWER, -1, v.downX, v.downY);
                     return true;
                 }
             });

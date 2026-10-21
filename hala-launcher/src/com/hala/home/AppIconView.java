@@ -13,6 +13,9 @@ final class AppIconView extends LinearLayout {
     final AppInfo app;
     final ImageView icon;
     final TextView label;
+    /** Where the finger last went down on this icon, in screen pixels. */
+    float downX;
+    float downY;
 
     /**
      * @param onWallpaper the name is drawn over the wallpaper (white with a shadow) rather
@@ -51,6 +54,8 @@ final class AppIconView extends LinearLayout {
             public boolean onTouch(View v, android.view.MotionEvent e) {
                 switch (e.getActionMasked()) {
                     case android.view.MotionEvent.ACTION_DOWN:
+                        downX = e.getRawX();
+                        downY = e.getRawY();
                         icon.animate().scaleX(0.92f).scaleY(0.92f).setDuration(120).start();
                         break;
                     case android.view.MotionEvent.ACTION_UP:
