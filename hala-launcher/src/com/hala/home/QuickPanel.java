@@ -113,7 +113,7 @@ final class QuickPanel {
         head.addView(iconButton(c, R.drawable.glyph_gear, new Runnable() {
             @Override
             public void run() {
-                host.start(new Intent(Settings.ACTION_SETTINGS));
+                open(host, new Intent(Settings.ACTION_SETTINGS));
             }
         }));
         panel.addView(head);
@@ -126,7 +126,7 @@ final class QuickPanel {
         big.addView(bigTile(c, R.drawable.glyph_wifi, c.getString(R.string.qp_wifi), wifiOn, new Runnable() {
             @Override
             public void run() {
-                host.start(new Intent(Settings.Panel.ACTION_WIFI));
+                open(host, new Intent(Settings.Panel.ACTION_WIFI));
             }
         }), weighted(false));
         boolean btOn = false;
@@ -139,7 +139,7 @@ final class QuickPanel {
         big.addView(bigTile(c, R.drawable.glyph_bluetooth, c.getString(R.string.qp_bluetooth), btOn, new Runnable() {
             @Override
             public void run() {
-                host.start(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+                open(host, new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
             }
         }), weighted(true));
         panel.addView(big);
@@ -155,7 +155,7 @@ final class QuickPanel {
         round.addView(roundTile(c, R.drawable.glyph_location, c.getString(R.string.qp_location), locOn, new Toggle() {
             @Override
             public boolean toggle(boolean on) {
-                host.start(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                open(host, new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                 return on;
             }
         }), roundParams());
@@ -163,7 +163,7 @@ final class QuickPanel {
         round.addView(roundTile(c, R.drawable.glyph_airplane, c.getString(R.string.qp_airplane), airplane, new Toggle() {
             @Override
             public boolean toggle(boolean on) {
-                host.start(new Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS));
+                open(host, new Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS));
                 return on;
             }
         }), roundParams());
@@ -206,6 +206,49 @@ final class QuickPanel {
     }
 
     // ---- Building blocks ----
+
+    /**
+     * Open a system screen. The panel closes first, so it shows fresh states when opened again.
+     */
+    private static void open(Host host, Intent i) {
+        host.dismissOverlay();
+        host.start(i);
+    }
+
+    /** Follow the flashlight from the start, so the tile is right the first time it shows. */
+    static void watchTorch(Context c) {
+        if (torchCallback != null) {
+            return;
+        }
+        CameraManager cm = (CameraManager) c.getApplicationContext().getSystemService(Context.CAMERA_SERVICE);
+        if (cm == null) {
+            return;
+        }
+        try {
+            for (String id : cm.getCameraIdList()) {
+                Boolean flash = cm.getCameraCharacteristics(id).get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                if (flash != null && flash) {
+                    torchId = id;
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            torchId = null;
+        }
+        torchCallback = new CameraManager.TorchCallback() {
+            @Override
+            public void onTorchModeChanged(String cameraId, boolean enabled) {
+                if (cameraId.equals(torchId)) {
+                    torchOn = enabled;
+                }
+            }
+        };
+        try {
+            cm.registerTorchCallback(torchCallback, new Handler(Looper.getMainLooper()));
+        } catch (RuntimeException e) {
+            // No camera service: the tile stays off.
+        }
+    }
 
     private interface Toggle {
         /** Act on a tap; return the new state. */
@@ -259,7 +302,7 @@ final class QuickPanel {
         LinearLayout t = new LinearLayout(c);
         t.setGravity(Gravity.CENTER_VERTICAL);
         t.setBackground(Ui.rounded(tileColor(), 30));
-        t.setPadding(Ui.dp(8), 0, Ui.dp(12), 0);
+        t.setPaddingRelative(Ui.dp(8), 0, Ui.dp(12), 0);
         ImageView icon = new ImageView(c);
         icon.setImageDrawable(glyph(c, glyph, on ? 0xFFFFFFFF : Ui.text()));
         icon.setBackground(Ui.rounded(on ? Ui.PRIMARY : Ui.divider(), 22));
@@ -267,7 +310,7 @@ final class QuickPanel {
         t.addView(icon, new LinearLayout.LayoutParams(Ui.dp(44), Ui.dp(44)));
         LinearLayout labels = new LinearLayout(c);
         labels.setOrientation(LinearLayout.VERTICAL);
-        labels.setPadding(Ui.dp(10), 0, 0, 0);
+        labels.setPaddingRelative(Ui.dp(10), 0, 0, 0);
         TextView name = Ui.text(c, label, 14, Ui.text(), true);
         name.setSingleLine(true);
         labels.addView(name);
@@ -317,31 +360,8 @@ final class QuickPanel {
     // ---- Toggles Android lets the launcher switch ----
 
     private static View flashlight(final Context c) {
+        watchTorch(c);
         final CameraManager cm = (CameraManager) c.getSystemService(Context.CAMERA_SERVICE);
-        if (torchId == null && cm != null) {
-            try {
-                for (String id : cm.getCameraIdList()) {
-                    Boolean flash = cm.getCameraCharacteristics(id).get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-                    if (flash != null && flash) {
-                        torchId = id;
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                torchId = null;
-            }
-            if (torchCallback == null) {
-                torchCallback = new CameraManager.TorchCallback() {
-                    @Override
-                    public void onTorchModeChanged(String cameraId, boolean enabled) {
-                        if (cameraId.equals(torchId)) {
-                            torchOn = enabled;
-                        }
-                    }
-                };
-                cm.registerTorchCallback(torchCallback, new Handler(Looper.getMainLooper()));
-            }
-        }
         return roundTile(c, R.drawable.glyph_flashlight, c.getString(R.string.qp_flashlight), torchOn, new Toggle() {
             @Override
             public boolean toggle(boolean on) {
@@ -362,7 +382,7 @@ final class QuickPanel {
         if (Settings.System.canWrite(c)) {
             return true;
         }
-        host.start(new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:" + c.getPackageName())));
+        open(host, new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:" + c.getPackageName())));
         return false;
     }
 
@@ -390,11 +410,17 @@ final class QuickPanel {
                     return on;
                 }
                 if (!nm.isNotificationPolicyAccessGranted()) {
-                    host.start(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS));
+                    open(host, new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS));
                     return on;
                 }
                 nm.setInterruptionFilter(on ? NotificationManager.INTERRUPTION_FILTER_ALL : NotificationManager.INTERRUPTION_FILTER_PRIORITY);
-                return !on;
+                boolean now = nm.getCurrentInterruptionFilter() > NotificationManager.INTERRUPTION_FILTER_ALL;
+                if (on && now) {
+                    // Since Android 15 an app can end only the Do not disturb it started itself;
+                    // the system's own is ended in its settings.
+                    open(host, new Intent("android.settings.ZEN_MODE_SETTINGS"));
+                }
+                return now;
             }
         });
     }
@@ -405,10 +431,19 @@ final class QuickPanel {
         float fraction = (float) Math.sqrt(Math.max(0, Math.min(255, now)) / 255f);
         return new PillSlider(c, R.drawable.glyph_brightness, fraction, new PillSlider.Listener() {
             boolean asked;
+            Boolean allowed;
+            int last = -1;
 
             @Override
             public void onChange(float f, boolean done) {
-                if (!Settings.System.canWrite(c)) {
+                if (allowed == null) {
+                    allowed = Settings.System.canWrite(c);
+                    if (allowed) {
+                        // Manual brightness once, as the drag begins.
+                        Settings.System.putInt(c.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+                    }
+                }
+                if (!allowed) {
                     if (done && !asked) {
                         asked = true;
                         canWriteSettings(c, host);
@@ -416,8 +451,10 @@ final class QuickPanel {
                     return;
                 }
                 int v = Math.max(1, Math.round(255 * f * f));
-                Settings.System.putInt(c.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
-                Settings.System.putInt(c.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, v);
+                if (v != last) {
+                    last = v;
+                    Settings.System.putInt(c.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, v);
+                }
             }
         });
     }

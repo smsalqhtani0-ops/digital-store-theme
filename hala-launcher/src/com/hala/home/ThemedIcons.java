@@ -90,32 +90,58 @@ final class ThemedIcons {
             }
         }
         String byRole = roles.get(pkg);
-        return byRole != null ? byRole : byWords(pkg.toLowerCase(Locale.ROOT), false);
+        if (byRole != null) {
+            return byRole;
+        }
+        // By name only for the system's and the device maker's own packages, so a preinstalled
+        // third-party app whose name happens to contain "music" keeps its icon.
+        String lower = pkg.toLowerCase(Locale.ROOT);
+        for (String maker : MAKERS) {
+            if (lower.startsWith(maker)) {
+                return byWords(lower.substring(maker.length()), false);
+            }
+        }
+        return null;
+    }
+
+    private static final String[] MAKERS = {"com.android.", "com.hihonor.", "com.honor.", "com.huawei.", "com.hihonor"};
+
+    /** Whether one of the dot-separated parts of `name` starts or ends with `word`. */
+    private static boolean part(String name, String word) {
+        for (String p : name.split("\\.")) {
+            if (p.startsWith(word) || p.endsWith(word)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String byWords(String s, boolean activity) {
-        if (s.contains("dial") || s.contains("calllog") || activity && s.contains("phone")) {
-            return "phone";
-        }
-        if (s.contains("contact") || s.contains("people")) {
-            return "contacts";
-        }
-        if (s.contains("mms") || s.contains("messag") || s.contains("conversation")) {
-            return "messages";
-        }
         if (activity) {
+            // The last part of an activity's class name, e.g. "DialtactsActivity".
+            String cls = s.substring(s.lastIndexOf('.') + 1);
+            if (cls.contains("dial") || cls.contains("calllog") || cls.contains("phone")) {
+                return "phone";
+            }
+            if (cls.contains("contact") || cls.contains("people")) {
+                return "contacts";
+            }
+            if (cls.contains("mms") || cls.contains("messag") || cls.contains("conversation")) {
+                return "messages";
+            }
             return null;
         }
         String[][] words = {
-            {"notepad", "notes"}, {"note", "notes"}, {"recorder", "recorder"}, {"thememanager", "themes"},
-            {"theme", "themes"}, {"health", "health"}, {"systemmanager", "care"}, {"phonemanager", "care"},
+            {"dialer", "phone"}, {"contacts", "contacts"}, {"mms", "messages"}, {"messaging", "messages"},
+            {"notepad", "notes"}, {"notes", "notes"}, {"recorder", "recorder"}, {"thememanager", "themes"},
+            {"themes", "themes"}, {"health", "health"}, {"systemmanager", "care"}, {"phonemanager", "care"},
             {"optimiz", "care"}, {"video", "video"}, {"filemanager", "files"}, {"deskclock", "clock"},
             {"clock", "clock"}, {"calculator", "calculator"}, {"calendar", "calendar"}, {"camera", "camera"},
             {"gallery", "gallery"}, {"photos", "gallery"}, {"weather", "weather"}, {"email", "email"},
             {"browser", "browser"}, {"music", "music"}, {"download", "downloads"},
         };
         for (String[] w : words) {
-            if (s.contains(w[0])) {
+            if (part(s, w[0])) {
                 return w[1];
             }
         }
@@ -132,7 +158,7 @@ final class ThemedIcons {
             return null;
         }
         Drawable d = context.getDrawable(id);
-        return d == null ? null : IconShapes.renderFull(d, size);
+        return d == null ? null : IconShapes.renderFull(d.mutate(), size);
     }
 
     /** The calendar shows today: the weekday in red over the day's number. */

@@ -99,6 +99,7 @@ public final class HomeActivity extends Activity
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
         repo = new AppRepository(this, this);
         weather = new Weather(this);
+        QuickPanel.watchTorch(this);
         buildUi();
         repo.load(iconPx(), prefs.themedIcons());
     }
@@ -171,9 +172,12 @@ public final class HomeActivity extends Activity
             repo.load(iconPx(), prefs.themedIcons());
         }
         boolean settingsOpen = overlay.getVisibility() == View.VISIBLE && overlay.getTag() == SETTINGS_TAG;
+        boolean panelOpen = overlay.getVisibility() == View.VISIBLE && overlay.getTag() == QUICK_TAG;
         buildUi();
         if (settingsOpen) {
             showSettings();
+        } else if (panelOpen) {
+            showQuickPanel();
         }
     }
 
@@ -330,7 +334,15 @@ public final class HomeActivity extends Activity
     @Override
     public void weatherTapped() {
         if (!weather.permitted()) {
-            requestPermissions(new String[] {android.Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_LOCATION);
+            String perm = android.Manifest.permission.ACCESS_COARSE_LOCATION;
+            android.content.SharedPreferences sp = getSharedPreferences("hala", MODE_PRIVATE);
+            if (sp.getBoolean("askedLocation", false) && !shouldShowRequestPermissionRationale(perm)) {
+                // Refused for good: Android no longer asks, so open Hala's page in Settings.
+                start(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName())));
+                return;
+            }
+            sp.edit().putBoolean("askedLocation", true).apply();
+            requestPermissions(new String[] {perm}, REQUEST_LOCATION);
             return;
         }
         // With the weather showing, open the device's weather app; else try again now.

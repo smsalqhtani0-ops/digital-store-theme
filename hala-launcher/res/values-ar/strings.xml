@@ -74,4 +74,5 @@
     <string name="qp_home_settings">إعدادات الرئيسية</string>
     <string name="qp_on">يعمل</string>
     <string name="qp_off">متوقف</string>
+    <string name="wx_failed">تعذّر تحديد موقعك. تأكد من تشغيل الموقع ثم اضغط للمحاولة مجددًا.</string>
 </resources>

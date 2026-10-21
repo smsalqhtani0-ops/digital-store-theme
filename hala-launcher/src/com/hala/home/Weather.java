@@ -45,6 +45,9 @@ final class Weather {
     private static final long FRESH_MS = 30 * 60 * 1000L;
 
     boolean known;
+    /** The last attempt failed (location off, no fix or no network). */
+    boolean failed;
+    private long lastAttempt;
     int temp;
     int high;
     int low;
@@ -77,10 +80,12 @@ final class Weather {
 
     /** Fetch again if the last result is older than half an hour (or `force`). */
     void refresh(boolean force, final Listener listener) {
-        if (loading || !permitted() || (!force && System.currentTimeMillis() - time < FRESH_MS)) {
+        long now = System.currentTimeMillis();
+        if (loading || !permitted() || (!force && (now - time < FRESH_MS || now - lastAttempt < 5 * 60 * 1000L))) {
             return;
         }
         loading = true;
+        lastAttempt = now;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -89,9 +94,8 @@ final class Weather {
                     @Override
                     public void run() {
                         loading = false;
-                        if (ok) {
-                            listener.onWeather(Weather.this);
-                        }
+                        failed = !ok;
+                        listener.onWeather(Weather.this);
                     }
                 });
             }

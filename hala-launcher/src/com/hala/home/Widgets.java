@@ -129,6 +129,11 @@ final class Widgets {
             TextView hint = Ui.text(c, c.getString(R.string.wx_tap_hint), 12, 0xD9FFFFFF, false);
             hint.setMaxLines(2);
             card.addView(hint);
+        } else if (!w.known && w.failed) {
+            card.addView(line(c, c.getString(R.string.wx_tap), 14, 0xFFFFFFFF, true));
+            TextView hint = Ui.text(c, c.getString(R.string.wx_failed), 12, 0xD9FFFFFF, false);
+            hint.setMaxLines(2);
+            card.addView(hint);
         } else if (!w.known) {
             card.addView(line(c, c.getString(R.string.wx_loading), 14, 0xFFFFFFFF, true));
         } else {

@@ -39,6 +39,8 @@ final class AppRepository {
     private int iconPx;
     private boolean themed;
     private int generation;
+    /** Loads run one after another, never two at once. */
+    private final java.util.concurrent.ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor();
     /** The day the icons were drawn (the calendar icon shows the date). */
     private int loadedDay = -1;
 
@@ -79,6 +81,7 @@ final class AppRepository {
 
     void close() {
         launcherApps.unregisterCallback(callback);
+        worker.shutdown();
     }
 
     List<AppInfo> all() {
@@ -125,7 +128,7 @@ final class AppRepository {
         final int px = iconPx;
         final boolean withThemes = themed;
         loadedDay = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR);
-        new Thread(new Runnable() {
+        worker.execute(new Runnable() {
             @Override
             public void run() {
                 final List<AppInfo> list = query(px, withThemes);
@@ -147,7 +150,7 @@ final class AppRepository {
                     }
                 });
             }
-        }, "hala-apps").start();
+        });
     }
 
     private List<AppInfo> query(int px, boolean withThemes) {

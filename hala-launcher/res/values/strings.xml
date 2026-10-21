@@ -74,4 +74,5 @@
     <string name="qp_home_settings">Home settings</string>
     <string name="qp_on">On</string>
     <string name="qp_off">Off</string>
+    <string name="wx_failed">Couldn\'t find your location. Check that location is on, then tap to try again.</string>
 </resources>
