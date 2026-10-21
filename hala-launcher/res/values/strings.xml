@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hala Home</string>
+    <string name="search_apps">Search apps</string>
+    <string name="no_results">No apps found</string>
+    <string name="add_to_home">Add to Home screen</string>
+    <string name="add_to_dock">Add to dock</string>
+    <string name="remove">Remove</string>
+    <string name="remove_from_dock">Remove from dock</string>
+    <string name="app_info">App info</string>
+    <string name="uninstall">Uninstall</string>
+    <string name="home_full">The Home screen is full. A new page was added.</string>
+    <string name="dock_full">The dock is full.</string>
+    <string name="settings">Home screen settings</string>
+    <string name="section_layout">Layout</string>
+    <string name="section_look">Appearance</string>
+    <string name="section_system">System</string>
+    <string name="grid_columns">Columns</string>
+    <string name="grid_rows">Rows</string>
+    <string name="icon_size">Icon size</string>
+    <string name="show_labels">Show app names</string>
+    <string name="theme">Theme</string>
+    <string name="theme_auto">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="recent_apps">Recent apps in the dock</string>
+    <string name="recent_apps_hint">Needs Usage access: turn it on for Hala Home.</string>
+    <string name="wallpaper">Change wallpaper</string>
+    <string name="default_home">Choose the default Home app</string>
+    <string name="default_home_hint">Pick your device\'s own Home app here to go back to it.</string>
+    <string name="about">Hala Home %1$s · original design inspired by One UI\'s published guidelines</string>
+    <string name="done">Done</string>
+    <string name="cant_open">Can\'t open this app</string>
+</resources>

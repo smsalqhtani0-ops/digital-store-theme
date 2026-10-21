@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">هلا</string>
+    <string name="search_apps">البحث في التطبيقات</string>
+    <string name="no_results">لا توجد تطبيقات مطابقة</string>
+    <string name="add_to_home">إضافة إلى الشاشة الرئيسية</string>
+    <string name="add_to_dock">إضافة إلى الشريط السفلي</string>
+    <string name="remove">إزالة</string>
+    <string name="remove_from_dock">إزالة من الشريط السفلي</string>
+    <string name="app_info">معلومات التطبيق</string>
+    <string name="uninstall">إلغاء التثبيت</string>
+    <string name="home_full">الشاشة الرئيسية ممتلئة، فأُضيفت صفحة جديدة.</string>
+    <string name="dock_full">الشريط السفلي ممتلئ.</string>
+    <string name="settings">إعدادات الشاشة الرئيسية</string>
+    <string name="section_layout">التخطيط</string>
+    <string name="section_look">المظهر</string>
+    <string name="section_system">النظام</string>
+    <string name="grid_columns">الأعمدة</string>
+    <string name="grid_rows">الصفوف</string>
+    <string name="icon_size">حجم الأيقونات</string>
+    <string name="show_labels">إظهار أسماء التطبيقات</string>
+    <string name="theme">السمة</string>
+    <string name="theme_auto">حسب النظام</string>
+    <string name="theme_light">فاتحة</string>
+    <string name="theme_dark">داكنة</string>
+    <string name="recent_apps">التطبيقات الأخيرة في الشريط السفلي</string>
+    <string name="recent_apps_hint">يتطلب إذن «الوصول إلى الاستخدام»: فعّله لتطبيق هلا.</string>
+    <string name="wallpaper">تغيير الخلفية</string>
+    <string name="default_home">اختيار تطبيق الشاشة الرئيسية الافتراضي</string>
+    <string name="default_home_hint">اختر من هنا واجهة جهازك الأصلية للعودة إليها.</string>
+    <string name="about">هلا %1$s · تصميم أصلي مستوحى من إرشادات One UI المنشورة</string>
+    <string name="done">تم</string>
+    <string name="cant_open">تعذّر فتح هذا التطبيق</string>
+</resources>
