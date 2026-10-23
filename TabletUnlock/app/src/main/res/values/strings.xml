@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">فتح التابلت</string>
+
+    <string name="mode_title">اختر وضع هذا الجهاز</string>
+    <string name="mode_subtitle">ثبّت التطبيق نفسه على الجهازين، واختر لكل جهاز وضعه.</string>
+    <string name="mode_tablet">وضع التابلت</string>
+    <string name="mode_tablet_desc">الجهاز الذي سيُفتح قفله (يحتاج Shizuku).</string>
+    <string name="mode_phone">وضع الجوال</string>
+    <string name="mode_phone_desc">الجهاز الذي تضع عليه بصمتك.</string>
+    <string name="change_mode">تغيير الوضع</string>
+
+    <string name="shizuku_title">Shizuku</string>
+    <string name="shizuku_not_running">Shizuku غير مشغّل. شغّله من تطبيق Shizuku أولاً.</string>
+    <string name="shizuku_unsupported">إصدار Shizuku قديم. حدّثه إلى الإصدار 11 أو أحدث.</string>
+    <string name="shizuku_no_permission">Shizuku يعمل، لكن التطبيق لم يحصل على الإذن بعد.</string>
+    <string name="shizuku_connecting">جارٍ الاتصال بخدمة Shizuku…</string>
+    <string name="shizuku_ready">متصل ✓ (أوامر shell متاحة)</string>
+    <string name="shizuku_open_app">فتح تطبيق Shizuku</string>
+    <string name="shizuku_grant">منح الإذن</string>
+    <string name="shizuku_denied_forever">رُفض الإذن نهائياً. امنحه يدوياً من تطبيق Shizuku ← التطبيقات المصرّح لها.</string>
+    <string name="refresh">تحديث</string>
+
+    <string name="pin_title">رمز قفل التابلت</string>
+    <string name="pin_saved">الرمز محفوظ ومشفّر بمفتاح Android Keystore.</string>
+    <string name="pin_hint">الرمز (أرقام فقط)</string>
+    <string name="pin_invalid">يجب أن يكون الرمز من 4 إلى 16 رقماً.</string>
+    <string name="save">حفظ</string>
+    <string name="change">تغيير</string>
+    <string name="delete">حذف</string>
+    <string name="cancel">إلغاء</string>
+
+    <string name="method_title">طريقة إظهار لوحة الرمز</string>
+    <string name="method_swipe">سحب للأعلى (input swipe)</string>
+    <string name="method_dismiss">wm dismiss-keyguard (بديل إن لم ينجح السحب)</string>
+
+    <string name="test_title">اختبار الفتح</string>
+    <string name="test_desc">سيُقفل الشاشة، ثم يفتحها تلقائياً بعد 5 ثوانٍ. لا تلمس الجهاز أثناء الاختبار.</string>
+    <string name="test_button">اختبار الفتح</string>
+    <string name="test_running">جارٍ الاختبار…</string>
+
+    <string name="phone_title">وضع الجوال</string>
+    <string name="phone_placeholder">هذا الوضع يُبنى في المرحلة 2 (الاقتران عبر QR) والمرحلة 3 (البصمة والتوقيع).</string>
+</resources>
