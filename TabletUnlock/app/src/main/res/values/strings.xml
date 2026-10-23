@@ -102,4 +102,8 @@
 
     <string name="notif_initiate_title">فتح التابلت</string>
     <string name="notif_initiate_text">اضغط وضع بصمتك لفتح التابلت.</string>
+
+    <string name="phone_notif_title">فتح التابلت جاهز</string>
+    <string name="phone_notif_text">اضغط الزر لفتح التابلت ببصمتك.</string>
+    <string name="phone_notif_action">فتح التابلت</string>
 </resources>

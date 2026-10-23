@@ -1,9 +1,11 @@
 package com.tabletunlock.service
 
 import android.app.Notification
+import android.app.PendingIntent
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 
@@ -37,5 +39,24 @@ object ServiceNotifications {
 
     fun update(context: Context, id: Int, title: String, text: String) {
         context.getSystemService(NotificationManager::class.java).notify(id, build(context, title, text))
+    }
+
+    /** إشعار الجوال الدائم مع زر "فتح التابلت" يظهر على شاشة القفل. */
+    fun phoneNotification(context: Context): Notification {
+        ensureChannel(context)
+        val intent = Intent(context, com.tabletunlock.biometric.PhoneInitiateActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val pending = PendingIntent.getActivity(
+            context, 3, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+            .setContentTitle(context.getString(com.tabletunlock.R.string.phone_notif_title))
+            .setContentText(context.getString(com.tabletunlock.R.string.phone_notif_text))
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setContentIntent(pending)
+            .addAction(android.R.drawable.ic_lock_idle_lock, context.getString(com.tabletunlock.R.string.phone_notif_action), pending)
+            .build()
     }
 }

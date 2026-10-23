@@ -9,6 +9,7 @@ import com.tabletunlock.net.TabletClient
 import com.tabletunlock.security.PinStore
 import com.tabletunlock.shizuku.ShizukuManager
 import com.tabletunlock.shizuku.ShizukuState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -33,7 +34,11 @@ class AutoUnlocker(context: Context) {
             if (now - lastAttempt < COOLDOWN_MS) return
             lastAttempt = now
 
-            if (!keyguard.isKeyguardLocked) return
+            // بعض أجهزة أونر تتأخّر في ضبط حالة القفل بعد إضاءة الشاشة؛ ننتظر قليلاً ونعيد الفحص.
+            if (!keyguard.isKeyguardLocked) {
+                delay(700)
+                if (!keyguard.isKeyguardLocked) return
+            }
             if (!pairing.paired) {
                 onStatus("لم يتم الاقتران مع الجوال.")
                 return
@@ -84,6 +89,6 @@ class AutoUnlocker(context: Context) {
 
         @Volatile
         var lastAttempt = 0L
-        const val COOLDOWN_MS = 8_000L
+        const val COOLDOWN_MS = 5_000L
     }
 }

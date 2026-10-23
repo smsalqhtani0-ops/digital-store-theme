@@ -24,11 +24,7 @@ class PhoneUnlockService : Service() {
     override fun onCreate() {
         super.onCreate()
         listener = PhoneListener(this)
-        val notification = ServiceNotifications.build(
-            this,
-            "جاهز لاستقبال طلبات الفتح",
-            "التطبيق يستمع في الخلفية.",
-        )
+        val notification = ServiceNotifications.phoneNotification(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ServiceCompat.startForeground(
                 this,
