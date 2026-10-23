@@ -1,6 +1,9 @@
 package com.tabletunlock.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -23,10 +26,16 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.journeyapps.barcodescanner.ScanContract
@@ -40,6 +49,10 @@ fun PhoneScreen(onChangeMode: () -> Unit, vm: PhoneViewModel = viewModel()) {
     val paired by vm.paired.collectAsStateWithLifecycle()
     val listening by vm.listening.collectAsStateWithLifecycle()
     val log by vm.log.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+    var canOverlay by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { canOverlay = Settings.canDrawOverlays(context) }
 
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         result.contents?.let(vm::onScanned)
@@ -116,6 +129,23 @@ fun PhoneScreen(onChangeMode: () -> Unit, vm: PhoneViewModel = viewModel()) {
                             color = if (listening) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         )
                         Text(stringResource(R.string.bg_battery), style = MaterialTheme.typography.bodySmall)
+                        if (canOverlay) {
+                            Text(
+                                stringResource(R.string.overlay_ok),
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        } else {
+                            Text(stringResource(R.string.overlay_needed), style = MaterialTheme.typography.bodySmall)
+                            OutlinedButton(onClick = {
+                                context.startActivity(
+                                    Intent(
+                                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                        Uri.parse("package:" + context.packageName),
+                                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                )
+                            }) { Text(stringResource(R.string.overlay_grant)) }
+                        }
                     }
                     log.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
                 }

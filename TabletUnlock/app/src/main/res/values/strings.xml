@@ -83,4 +83,8 @@
     <string name="bg_on">يعمل في الخلفية ✓ — يصلك الإشعار على شاشة القفل.</string>
     <string name="bg_off">متوقف.</string>
     <string name="bg_battery">إن توقف تلقائياً، استثنِ التطبيق من توفير البطارية في إعدادات الجهاز.</string>
+
+    <string name="overlay_needed">لعرض البصمة مباشرة عند إضاءة الشاشة، فعّل إذن "الظهور فوق التطبيقات".</string>
+    <string name="overlay_grant">منح إذن الظهور فوق التطبيقات</string>
+    <string name="overlay_ok">إذن الظهور فوق التطبيقات مُفعّل ✓ — البصمة تظهر مباشرة عند إضاءة الشاشة.</string>
 </resources>

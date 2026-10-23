@@ -1,6 +1,10 @@
 package com.tabletunlock.net
 
 import android.content.Context
+import android.content.Intent
+import android.os.PowerManager
+import android.provider.Settings
+import com.tabletunlock.biometric.UnlockApproveActivity
 import com.tabletunlock.biometric.UnlockNotifier
 import com.tabletunlock.crypto.SigningKeys
 import com.tabletunlock.data.AppMode
@@ -25,6 +29,7 @@ class PhoneListener(context: Context) {
     private val appContext = context.applicationContext
     private val store = PairingStore(appContext, AppMode.PHONE)
     private val nsd = NsdHelper(appContext)
+    private val power = appContext.getSystemService(PowerManager::class.java)
 
     private var serverSocket: ServerSocket? = null
     private var job: Job? = null
@@ -109,10 +114,10 @@ class PhoneListener(context: Context) {
                 "unlock" -> {
                     onLog("طلب فتح وارد — بانتظار البصمة…")
                     val pending = UnlockRequestBus.open(nonce, ts)
-                    UnlockNotifier.show(appContext)
+                    val shownDirectly = showPrompt(onLog)
                     val signature = withTimeoutOrNull(APPROVAL_TIMEOUT_MS) { pending.result.await() }
                     UnlockRequestBus.clear(pending)
-                    UnlockNotifier.cancel(appContext)
+                    if (!shownDirectly) UnlockNotifier.cancel(appContext)
                     if (signature != null) {
                         onLog("تمت الموافقة بالبصمة ✓")
                         Wire.send(
@@ -126,6 +131,26 @@ class PhoneListener(context: Context) {
                 }
                 else -> Wire.send(writer, reject("unsupported"))
             }
+        }
+    }
+
+    /**
+     * إن كانت الشاشة مضاءة (والإذن بالظهور فوق التطبيقات ممنوح)، تُفتح شاشة البصمة مباشرة.
+     * وإلا يُعرض إشعار عالي الأولوية يظهر على شاشة القفل. يعيد true إن فُتحت الشاشة مباشرة.
+     */
+    private fun showPrompt(onLog: (String) -> Unit): Boolean {
+        val interactive = power.isInteractive
+        val canOverlay = Settings.canDrawOverlays(appContext)
+        return if (interactive && canOverlay) {
+            onLog("الشاشة مضاءة — إظهار البصمة مباشرة.")
+            appContext.startActivity(
+                Intent(appContext, UnlockApproveActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            )
+            true
+        } else {
+            UnlockNotifier.show(appContext)
+            false
         }
     }
 
