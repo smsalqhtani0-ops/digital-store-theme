@@ -1,11 +1,13 @@
 package com.tabletunlock.ui
 
 import android.content.Context
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -91,6 +94,21 @@ fun TabletScreen(onChangeMode: () -> Unit, vm: TabletViewModel = viewModel()) {
                     countdown = ui.countdown,
                     log = ui.log,
                     onRun = vm::runTest,
+                )
+                PairingSection(
+                    paired = ui.paired,
+                    pairedPhoneName = ui.pairedPhoneName,
+                    qrContent = ui.qrContent,
+                    enabled = !ui.busy && !ui.connBusy,
+                    onStart = vm::startPairing,
+                    onCancel = vm::cancelPairing,
+                    onUnpair = vm::unpair,
+                )
+                ConnSection(
+                    canRun = ui.paired && !ui.connBusy && !ui.busy,
+                    busy = ui.connBusy,
+                    log = ui.connLog,
+                    onRun = vm::testConnection,
                 )
             }
         }
@@ -250,5 +268,70 @@ private fun TestSection(
         log.forEach { line ->
             Text(line, style = MaterialTheme.typography.bodySmall)
         }
+    }
+}
+
+@Composable
+private fun PairingSection(
+    paired: Boolean,
+    pairedPhoneName: String?,
+    qrContent: String?,
+    enabled: Boolean,
+    onStart: () -> Unit,
+    onCancel: () -> Unit,
+    onUnpair: () -> Unit,
+) {
+    SectionCard(stringResource(R.string.pair_title)) {
+        when {
+            qrContent != null -> {
+                Text(stringResource(R.string.pair_qr_hint), style = MaterialTheme.typography.bodyMedium)
+                val bitmap: ImageBitmap = remember(qrContent) { QrCode.generate(qrContent) }
+                Image(
+                    bitmap = bitmap,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .size(280.dp),
+                )
+                Text(stringResource(R.string.pair_waiting))
+                OutlinedButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
+            }
+            paired -> {
+                Text(
+                    stringResource(R.string.pair_done, pairedPhoneName ?: ""),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onStart, enabled = enabled) {
+                        Text(stringResource(R.string.pair_show_qr))
+                    }
+                    OutlinedButton(onClick = onUnpair, enabled = enabled) {
+                        Text(stringResource(R.string.unpair))
+                    }
+                }
+            }
+            else -> {
+                Text(stringResource(R.string.pair_none))
+                Button(onClick = onStart, enabled = enabled) {
+                    Text(stringResource(R.string.pair_show_qr))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConnSection(
+    canRun: Boolean,
+    busy: Boolean,
+    log: List<String>,
+    onRun: () -> Unit,
+) {
+    SectionCard(stringResource(R.string.conn_title)) {
+        Text(stringResource(R.string.conn_desc), style = MaterialTheme.typography.bodyMedium)
+        Button(onClick = onRun, enabled = canRun, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(if (busy) R.string.conn_running else R.string.conn_button))
+        }
+        log.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
     }
 }

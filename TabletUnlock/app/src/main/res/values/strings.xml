@@ -41,4 +41,24 @@
 
     <string name="phone_title">وضع الجوال</string>
     <string name="phone_placeholder">هذا الوضع يُبنى في المرحلة 2 (الاقتران عبر QR) والمرحلة 3 (البصمة والتوقيع).</string>
+
+    <string name="pair_title">الاقتران مع الجوال</string>
+    <string name="pair_none">لم يتم الاقتران بعد.</string>
+    <string name="pair_done">مقترن مع: %1$s</string>
+    <string name="pair_show_qr">بدء الاقتران (إظهار الرمز)</string>
+    <string name="pair_scan">مسح رمز التابلت</string>
+    <string name="pair_qr_hint">امسح هذا الرمز من الجوال (وضع الجوال ← مسح رمز التابلت). أبقِ الجهازين على نفس الواي فاي.</string>
+    <string name="pair_waiting">بانتظار الجوال…</string>
+    <string name="unpair">إلغاء الاقتران</string>
+
+    <string name="conn_title">اختبار الاتصال بالجوال</string>
+    <string name="conn_desc">يتأكد أن التابلت يجد الجوال على الشبكة ويتبادلان توقيعاً صحيحاً (بدون فتح بعد).</string>
+    <string name="conn_button">اختبار الاتصال</string>
+    <string name="conn_running">جارٍ الاختبار…</string>
+
+    <string name="listen_title">استقبال طلبات الفتح</string>
+    <string name="listen_desc">يجب أن يكون الجوال في وضع الاستماع ليجده التابلت أثناء الاختبار.</string>
+    <string name="listen_start">بدء الاستماع</string>
+    <string name="listen_stop">إيقاف الاستماع</string>
+    <string name="phone_need_pair">اقترن مع التابلت أولاً بمسح الرمز الذي يعرضه.</string>
 </resources>
