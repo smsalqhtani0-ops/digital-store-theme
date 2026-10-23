@@ -99,4 +99,7 @@
     <string name="tile_title">بلاطة الفتح السريع</string>
     <string name="tile_desc">أضف بلاطة "فتح التابلت" إلى شريط الإعدادات السريعة: اسحب الشريط للأسفل ← تعديل الأزرار (القلم) ← اسحب "فتح التابلت" للأعلى. بعدها اضغطها (حتى من شاشة القفل) ← بصمة ← يُفتح التابلت.</string>
     <string name="tile_test">تجربة الفتح من هنا</string>
+
+    <string name="notif_initiate_title">فتح التابلت</string>
+    <string name="notif_initiate_text">اضغط وضع بصمتك لفتح التابلت.</string>
 </resources>

@@ -35,6 +35,7 @@ class PhoneInitiateActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         showOverLockScreen()
+        InitiateNotifier.cancel(applicationContext)
         setContent {
             AppTheme {
                 Scaffold { padding ->
