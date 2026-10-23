@@ -4,6 +4,7 @@ import android.content.Context
 import com.tabletunlock.crypto.SigningKeys
 import com.tabletunlock.data.AppMode
 import com.tabletunlock.data.PairingStore
+import com.tabletunlock.net.Bt
 import com.tabletunlock.net.Wire
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -30,6 +31,7 @@ class PhonePairing(context: Context) {
                         put("secret", payload.secret)
                         put("ppk", phonePublic)
                         put("service", serviceName)
+                        put("bt", Bt.ownName(appContext) ?: "")
                     },
                 )
                 val ack = Wire.receive(reader)
@@ -37,6 +39,7 @@ class PhonePairing(context: Context) {
                     return@withContext kotlin.Result.failure(Exception("رفض التابلت الاقتران."))
                 }
                 store.peerPublicKey = payload.tabletPublicKey
+                store.peerBtName = payload.tabletBtName
                 kotlin.Result.success(Unit)
             }
         } catch (e: Exception) {

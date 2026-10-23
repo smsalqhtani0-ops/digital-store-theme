@@ -5,17 +5,18 @@ import com.tabletunlock.crypto.SigningKeys
 import com.tabletunlock.data.AppMode
 import com.tabletunlock.data.PairingStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.net.InetSocketAddress
-import java.net.Socket
 import java.security.SecureRandom
 
-/** التابلت كعميل: يكتشف الجوال عبر NSD ويرسل طلباً موقّعاً. */
+/** التابلت كعميل: يفتح قناة (بلوتوث ثم واي فاي) ويرسل طلباً موقّعاً. */
 class TabletClient(context: Context) {
     private val appContext = context.applicationContext
     private val store = PairingStore(appContext, AppMode.TABLET)
-    private val nsd = NsdHelper(appContext)
+    private val connector = Connector(appContext)
 
     sealed interface Outcome {
         data object Success : Outcome
@@ -28,75 +29,39 @@ class TabletClient(context: Context) {
         data class Failed(val message: String) : UnlockOutcome
     }
 
-    /** المرحلة 2: اختبار اتصال موثّق (بدون فتح). */
     suspend fun testConnection(onLog: (String) -> Unit): Outcome = withContext(Dispatchers.IO) {
-        val serviceName = store.peerServiceName
-            ?: return@withContext Outcome.Failed("لم يتم الاقتران بعد.")
-        onLog("البحث عن الجوال على الشبكة…")
-        val target = nsd.resolveOnce(serviceName)
-            ?: return@withContext Outcome.Failed("لم يُعثر على الجوال. تأكد أنه في وضع الاستماع وعلى نفس الواي فاي.")
-        onLog("عُثر على الجوال: ${target.first}:${target.second}")
-
-        try {
-            Socket().use { socket ->
-                socket.connect(InetSocketAddress(target.first, target.second), CONNECT_TIMEOUT_MS)
-                val writer = Wire.writer(socket.getOutputStream())
-                val reader = Wire.reader(socket.getInputStream())
+        if (!store.paired) return@withContext Outcome.Failed("لم يتم الاقتران بعد.")
+        val link = connector.open(store.peerBtName, store.peerServiceName) { onLog(it) }
+            ?: return@withContext Outcome.Failed("تعذّر الوصول للجوال عبر البلوتوث أو الواي فاي.")
+        link.use {
+            try {
                 val nonce = randomNonce()
                 val ts = System.currentTimeMillis()
-                val signed = "ping|$nonce|$ts".toByteArray()
-                Wire.send(
-                    writer,
-                    JSONObject().apply {
-                        put("type", "ping")
-                        put("nonce", nonce)
-                        put("ts", ts)
-                        put("sig", SigningKeys.b64(SigningKeys.signWithTablet(signed)))
-                    },
-                )
-                val reply = Wire.receive(reader)
-                if (reply?.optBoolean("ok") == true) {
-                    Outcome.Success
-                } else {
-                    Outcome.Failed("ردّ الجوال بالرفض: ${reply?.optString("error")}")
-                }
+                sendSigned(link, "ping", nonce, ts)
+                val reply = receiveWithin(link, 10_000)
+                if (reply?.optBoolean("ok") == true) Outcome.Success
+                else Outcome.Failed("ردّ الجوال بالرفض: ${reply?.optString("error")}")
+            } catch (e: Exception) {
+                Outcome.Failed("خطأ في الاتصال: ${e.message}")
             }
-        } catch (e: Exception) {
-            Outcome.Failed("خطأ في الاتصال: ${e.message}")
         }
     }
 
-    /** المرحلة 3: يطلب الفتح، وينتظر توقيع الجوال بعد البصمة، ويتحقق منه. */
     suspend fun requestUnlock(onLog: (String) -> Unit): UnlockOutcome = withContext(Dispatchers.IO) {
-        val serviceName = store.peerServiceName
-            ?: return@withContext UnlockOutcome.Failed("لم يتم الاقتران بعد.")
+        if (!store.paired) return@withContext UnlockOutcome.Failed("لم يتم الاقتران بعد.")
         val phoneKey = store.peerPublicKey
             ?: return@withContext UnlockOutcome.Failed("لا يوجد مفتاح للجوال. أعد الاقتران.")
-        onLog("البحث عن الجوال على الشبكة…")
-        val target = nsd.resolveOnce(serviceName)
-            ?: return@withContext UnlockOutcome.Failed("لم يُعثر على الجوال. تأكد أنه في وضع الاستماع.")
-        onLog("إرسال طلب الفتح… افتح الإشعار في الجوال وضع بصمتك.")
-
-        try {
-            Socket().use { socket ->
-                socket.connect(InetSocketAddress(target.first, target.second), CONNECT_TIMEOUT_MS)
-                socket.soTimeout = REPLY_TIMEOUT_MS
-                val writer = Wire.writer(socket.getOutputStream())
-                val reader = Wire.reader(socket.getInputStream())
+        val link = connector.open(store.peerBtName, store.peerServiceName) { onLog(it) }
+            ?: return@withContext UnlockOutcome.Failed("تعذّر الوصول للجوال. تأكد أنه في وضع الاستماع.")
+        onLog("إرسال طلب الفتح… افتح الإشعار/البصمة في الجوال.")
+        link.use {
+            try {
                 val nonce = randomNonce()
                 val ts = System.currentTimeMillis()
                 val signed = "unlock|$nonce|$ts".toByteArray()
-                Wire.send(
-                    writer,
-                    JSONObject().apply {
-                        put("type", "unlock")
-                        put("nonce", nonce)
-                        put("ts", ts)
-                        put("sig", SigningKeys.b64(SigningKeys.signWithTablet(signed)))
-                    },
-                )
-                val reply = Wire.receive(reader)
-                    ?: return@withContext UnlockOutcome.Failed("انقطع الاتصال قبل وصول الرد.")
+                sendSigned(link, "unlock", nonce, ts)
+                val reply = receiveWithin(link, REPLY_TIMEOUT_MS)
+                    ?: return@withContext UnlockOutcome.Rejected("انتهت المهلة بانتظار البصمة في الجوال.")
                 if (!reply.optBoolean("ok")) {
                     return@withContext UnlockOutcome.Rejected(mapError(reply.optString("error")))
                 }
@@ -111,11 +76,37 @@ class TabletClient(context: Context) {
                     !fresh -> UnlockOutcome.Rejected("تجاوز الرد 30 ثانية — رُفض.")
                     else -> UnlockOutcome.Approved
                 }
+            } catch (e: Exception) {
+                UnlockOutcome.Failed("خطأ في الاتصال: ${e.message}")
             }
-        } catch (e: java.net.SocketTimeoutException) {
-            UnlockOutcome.Rejected("انتهت المهلة بانتظار البصمة في الجوال.")
+        }
+    }
+
+    private fun sendSigned(link: Link, type: String, nonce: String, ts: Long) {
+        val signed = "$type|$nonce|$ts".toByteArray()
+        Wire.send(
+            link.writer,
+            JSONObject().apply {
+                put("type", type)
+                put("nonce", nonce)
+                put("ts", ts)
+                put("sig", SigningKeys.b64(SigningKeys.signWithTablet(signed)))
+            },
+        )
+    }
+
+    /** قراءة مع مهلة تعمل للبلوتوث والواي فاي: مراقب يغلق القناة عند التأخّر. */
+    private suspend fun receiveWithin(link: Link, timeoutMs: Long): JSONObject? = coroutineScope {
+        val watchdog = launch {
+            delay(timeoutMs)
+            runCatching { link.close() }
+        }
+        try {
+            Wire.receive(link.reader)
         } catch (e: Exception) {
-            UnlockOutcome.Failed("خطأ في الاتصال: ${e.message}")
+            null
+        } finally {
+            watchdog.cancel()
         }
     }
 
@@ -135,8 +126,7 @@ class TabletClient(context: Context) {
     }
 
     private companion object {
-        const val CONNECT_TIMEOUT_MS = 8000
-        const val REPLY_TIMEOUT_MS = 40_000
+        const val REPLY_TIMEOUT_MS = 40_000L
         const val FRESH_WINDOW_MS = 30_000L
     }
 }

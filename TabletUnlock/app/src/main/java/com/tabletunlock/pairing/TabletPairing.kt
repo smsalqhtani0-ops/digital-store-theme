@@ -4,6 +4,7 @@ import android.content.Context
 import com.tabletunlock.crypto.SigningKeys
 import com.tabletunlock.data.AppMode
 import com.tabletunlock.data.PairingStore
+import com.tabletunlock.net.Bt
 import com.tabletunlock.net.NetUtil
 import com.tabletunlock.net.Wire
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +40,8 @@ class TabletPairing(context: Context) {
             }
             server.soTimeout = PAIRING_TIMEOUT_MS
 
-            val payload = PairingPayload(PairingPayload.VERSION, host, server.localPort, secret, tabletPublic)
+            val btName = Bt.ownName(appContext)
+            val payload = PairingPayload(PairingPayload.VERSION, host, server.localPort, secret, tabletPublic, btName)
 
             Thread {
                 try {
@@ -56,6 +58,7 @@ class TabletPairing(context: Context) {
                             }
                             store.peerPublicKey = msg.getString("ppk")
                             store.peerServiceName = msg.getString("service")
+                            store.peerBtName = msg.optString("bt").ifBlank { null }
                             Wire.send(writer, JSONObject().put("ok", true))
                             onPaired(msg.getString("service"))
                         }

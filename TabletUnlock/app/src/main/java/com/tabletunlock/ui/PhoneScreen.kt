@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +61,14 @@ fun PhoneScreen(onChangeMode: () -> Unit, vm: PhoneViewModel = viewModel()) {
     val notifLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { vm.startListening() }
+    val btLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) {}
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            btLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
+        }
+    }
 
     fun enableListening() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -93,6 +102,7 @@ fun PhoneScreen(onChangeMode: () -> Unit, vm: PhoneViewModel = viewModel()) {
                     } else {
                         Text(stringResource(R.string.pair_none))
                     }
+                    Text(stringResource(R.string.bt_hint), style = MaterialTheme.typography.bodySmall)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = {
                             scanLauncher.launch(

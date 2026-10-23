@@ -19,6 +19,10 @@ class PairingStore(context: Context, mode: AppMode) {
         get() = prefs.getString(KEY_PEER_SERVICE, null)
         set(value) = prefs.edit().putString(KEY_PEER_SERVICE, value).apply()
 
+    var peerBtName: String?
+        get() = prefs.getString(KEY_PEER_BT, null)
+        set(value) = prefs.edit().putString(KEY_PEER_BT, value).apply()
+
     /** اسم خدمة هذا الجوال على الشبكة (يُولَّد مرة ويُثبَّت). */
     fun ownServiceName(): String {
         prefs.getString(KEY_OWN_SERVICE, null)?.let { return it }
@@ -32,6 +36,7 @@ class PairingStore(context: Context, mode: AppMode) {
     private companion object {
         const val KEY_PEER_PUBLIC = "peer_public"
         const val KEY_PEER_SERVICE = "peer_service"
+        const val KEY_PEER_BT = "peer_bt"
         const val KEY_OWN_SERVICE = "own_service"
     }
 }
