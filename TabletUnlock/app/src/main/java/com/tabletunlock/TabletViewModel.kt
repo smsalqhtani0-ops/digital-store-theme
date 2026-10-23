@@ -11,6 +11,8 @@ import com.tabletunlock.data.UnlockMethod
 import com.tabletunlock.net.TabletClient
 import com.tabletunlock.pairing.TabletPairing
 import com.tabletunlock.security.PinStore
+import com.tabletunlock.service.AutoState
+import com.tabletunlock.service.TabletAutoService
 import com.tabletunlock.shizuku.ShizukuManager
 import com.tabletunlock.shizuku.ShizukuState
 import com.tabletunlock.unlock.UnlockController
@@ -49,6 +51,8 @@ class TabletViewModel(app: Application) : AndroidViewModel(app) {
     private val client = TabletClient(app)
 
     val shizukuState: StateFlow<ShizukuState> = ShizukuManager.state
+    val autoRunning: StateFlow<Boolean> = AutoState.running
+    val autoStatus: StateFlow<String> = AutoState.lastStatus
 
     private val _ui = MutableStateFlow(
         TabletUiState(
@@ -146,6 +150,11 @@ class TabletViewModel(app: Application) : AndroidViewModel(app) {
             }
             _ui.update { it.copy(remoteBusy = false, countdown = 0) }
         }
+    }
+
+    fun setAuto(enabled: Boolean) {
+        prefs.autoUnlockEnabled = enabled
+        if (enabled) TabletAutoService.start(getApplication()) else TabletAutoService.stop(getApplication())
     }
 
     /** يقفل الشاشة، ينتظر 5 ثوانٍ، ثم يفتح بالرمز المحفوظ. يُستخدم للاختبار المحلي والفتح من الجوال. */

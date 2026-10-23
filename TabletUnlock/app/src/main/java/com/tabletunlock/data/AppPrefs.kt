@@ -27,8 +27,19 @@ class AppPrefs(context: Context) {
             prefs.edit().putString(KEY_METHOD, value.name).apply()
         }
 
+
+    var autoUnlockEnabled: Boolean
+        get() = prefs.getBoolean(KEY_AUTO, false)
+        set(value) = prefs.edit().putBoolean(KEY_AUTO, value).apply()
+
+    var listeningEnabled: Boolean
+        get() = prefs.getBoolean(KEY_LISTEN, false)
+        set(value) = prefs.edit().putBoolean(KEY_LISTEN, value).apply()
+
     private companion object {
         const val KEY_MODE = "mode"
         const val KEY_METHOD = "unlock_method"
+        const val KEY_AUTO = "auto_unlock"
+        const val KEY_LISTEN = "listening"
     }
 }

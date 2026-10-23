@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,6 +55,8 @@ private const val SHIZUKU_PACKAGE = "moe.shizuku.privileged.api"
 fun TabletScreen(onChangeMode: () -> Unit, vm: TabletViewModel = viewModel()) {
     val shizuku by vm.shizukuState.collectAsStateWithLifecycle()
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val autoRunning by vm.autoRunning.collectAsStateWithLifecycle()
+    val autoStatus by vm.autoStatus.collectAsStateWithLifecycle()
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshShizuku() }
 
@@ -115,6 +118,12 @@ fun TabletScreen(onChangeMode: () -> Unit, vm: TabletViewModel = viewModel()) {
                     busy = ui.remoteBusy,
                     log = ui.remoteLog,
                     onRun = vm::requestRemoteUnlock,
+                )
+                AutoSection(
+                    enabled = ui.paired && ui.hasPin,
+                    running = autoRunning,
+                    status = autoStatus,
+                    onToggle = vm::setAuto,
                 )
             }
         }
@@ -355,5 +364,36 @@ private fun RemoteUnlockSection(
             Text(stringResource(if (busy) R.string.remote_running else R.string.remote_button))
         }
         log.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+    }
+}
+
+@Composable
+private fun AutoSection(
+    enabled: Boolean,
+    running: Boolean,
+    status: String,
+    onToggle: (Boolean) -> Unit,
+) {
+    SectionCard(stringResource(R.string.auto_title)) {
+        Text(stringResource(R.string.auto_desc), style = MaterialTheme.typography.bodyMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.auto_switch),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Switch(checked = running, enabled = enabled, onCheckedChange = onToggle)
+        }
+        Text(
+            stringResource(if (running) R.string.auto_on else R.string.auto_off),
+            color = if (running) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+        )
+        if (status.isNotBlank()) {
+            Text("آخر حالة: $status", style = MaterialTheme.typography.bodySmall)
+        }
     }
 }

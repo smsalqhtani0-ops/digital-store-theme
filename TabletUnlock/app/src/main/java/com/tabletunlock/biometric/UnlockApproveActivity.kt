@@ -7,6 +7,7 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -19,8 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.activity.compose.setContent
 import androidx.fragment.app.FragmentActivity
-import androidx.compose.ui.platform.ComposeView
 import com.tabletunlock.crypto.SigningKeys
 import com.tabletunlock.net.UnlockRequestBus
 import com.tabletunlock.ui.theme.AppTheme
@@ -37,27 +38,24 @@ class UnlockApproveActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         showOverLockScreen()
 
-        val content = ComposeView(this).apply {
-            setContent {
-                AppTheme {
-                    Scaffold { padding ->
-                        Box(
-                            modifier = Modifier.fillMaxSize().padding(padding),
-                            contentAlignment = Alignment.Center,
+        setContent {
+            AppTheme {
+                Scaffold { padding ->
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(padding),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            androidx.compose.foundation.layout.Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text("فتح التابلت", style = MaterialTheme.typography.headlineSmall)
-                                Text(statusText.ifBlank { "ضع بصمتك للموافقة…" })
-                            }
+                            Text("فتح التابلت", style = MaterialTheme.typography.headlineSmall)
+                            Text(statusText.ifBlank { "ضع بصمتك للموافقة…" })
                         }
                     }
                 }
             }
         }
-        setContentView(content)
 
         val pending = UnlockRequestBus.pending
         if (pending == null) {

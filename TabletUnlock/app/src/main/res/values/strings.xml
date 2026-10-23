@@ -71,4 +71,16 @@
     <string name="remote_desc">يرسل طلباً للجوال، وعند وضع بصمتك هناك يُقفل التابلت ثم يُفتح تلقائياً. أبقِ الجوال في وضع الاستماع.</string>
     <string name="remote_button">طلب الفتح من الجوال</string>
     <string name="remote_running">بانتظار الجوال…</string>
+
+    <string name="auto_title">التشغيل التلقائي</string>
+    <string name="auto_desc">عند إضاءة شاشة التابلت وهو مقفل، يطلب الفتح من الجوال تلقائياً. يحتاج Shizuku مشغّلاً والاقتران والرمز.</string>
+    <string name="auto_switch">تفعيل الفتح التلقائي عند إضاءة الشاشة</string>
+    <string name="auto_on">مُفعّل ✓ — ينتظر إضاءة الشاشة.</string>
+    <string name="auto_off">متوقف.</string>
+
+    <string name="bg_title">الاستماع في الخلفية</string>
+    <string name="bg_switch">إبقاء الاستماع يعمل دائماً (حتى لو أُغلق التطبيق)</string>
+    <string name="bg_on">يعمل في الخلفية ✓ — يصلك الإشعار على شاشة القفل.</string>
+    <string name="bg_off">متوقف.</string>
+    <string name="bg_battery">إن توقف تلقائياً، استثنِ التطبيق من توفير البطارية في إعدادات الجهاز.</string>
 </resources>
