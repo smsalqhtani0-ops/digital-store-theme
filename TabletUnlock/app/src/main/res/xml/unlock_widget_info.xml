@@ -2,9 +2,12 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="40dp"
     android:minHeight="40dp"
+    android:minResizeWidth="40dp"
+    android:minResizeHeight="40dp"
     android:targetCellWidth="1"
     android:targetCellHeight="1"
     android:resizeMode="none"
-    android:widgetCategory="home_screen"
+    android:widgetCategory="home_screen|keyguard"
     android:previewImage="@android:drawable/ic_lock_idle_lock"
-    android:initialLayout="@layout/widget_unlock" />
+    android:initialLayout="@layout/widget_unlock"
+    android:initialKeyguardLayout="@layout/widget_unlock" />
