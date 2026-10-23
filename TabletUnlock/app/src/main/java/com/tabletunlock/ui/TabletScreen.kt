@@ -138,6 +138,11 @@ fun TabletScreen(onChangeMode: () -> Unit, vm: TabletViewModel = viewModel()) {
                     status = autoStatus,
                     onToggle = vm::setAuto,
                 )
+                ReceiveSection(
+                    enabled = ui.paired && ui.hasPin,
+                    on = ui.receiveEnabled,
+                    onToggle = vm::setReceive,
+                )
             }
         }
     }
@@ -408,5 +413,32 @@ private fun AutoSection(
         if (status.isNotBlank()) {
             Text("آخر حالة: $status", style = MaterialTheme.typography.bodySmall)
         }
+    }
+}
+
+@Composable
+private fun ReceiveSection(
+    enabled: Boolean,
+    on: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    SectionCard(stringResource(R.string.receive_title)) {
+        Text(stringResource(R.string.receive_desc), style = MaterialTheme.typography.bodyMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.receive_switch),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Switch(checked = on, enabled = enabled, onCheckedChange = onToggle)
+        }
+        Text(
+            stringResource(if (on) R.string.receive_on else R.string.receive_off),
+            color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+        )
     }
 }

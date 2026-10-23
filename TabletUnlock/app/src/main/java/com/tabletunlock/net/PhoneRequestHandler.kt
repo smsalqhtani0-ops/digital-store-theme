@@ -16,13 +16,13 @@ import org.json.JSONObject
  * منطق الجوال لمعالجة طلب وارد (عبر أي نقل).
  * يتحقق أن المُرسِل هو التابلت المقترن، ثم: "ping" ردّ مباشر، "unlock" بصمة.
  */
-class PhoneRequestHandler(context: Context) {
+class PhoneRequestHandler(context: Context) : RequestHandler {
     private val appContext = context.applicationContext
     private val store = PairingStore(appContext, AppMode.PHONE)
     private val power = appContext.getSystemService(PowerManager::class.java)
     private val seenNonces = LinkedHashSet<String>()
 
-    suspend fun handle(link: Link, onLog: (String) -> Unit) {
+    override suspend fun handle(link: Link, onLog: (String) -> Unit) {
         link.use {
             val request = Wire.receive(link.reader) ?: return
             val tabletKey = store.peerPublicKey

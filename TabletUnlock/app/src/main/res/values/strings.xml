@@ -89,4 +89,14 @@
     <string name="overlay_ok">إذن الظهور فوق التطبيقات مُفعّل ✓ — البصمة تظهر مباشرة عند إضاءة الشاشة.</string>
 
     <string name="bt_hint">يفضّل البلوتوث: شغّله على الجهازين، واقرنهما مرة واحدة من إعدادات البلوتوث. عند تعذّره يُستخدم الواي فاي تلقائياً.</string>
+
+    <string name="receive_title">استقبال الفتح من الجوال</string>
+    <string name="receive_desc">يجعل التابلت يستقبل أمر الفتح من بلاطة الجوال (الفتح يبدأ من جوالك). يحتاج Shizuku والاقتران والرمز.</string>
+    <string name="receive_switch">تفعيل الاستقبال من الجوال</string>
+    <string name="receive_on">مُفعّل ✓ — يستقبل أوامر الفتح من الجوال.</string>
+    <string name="receive_off">متوقف.</string>
+
+    <string name="tile_title">بلاطة الفتح السريع</string>
+    <string name="tile_desc">أضف بلاطة "فتح التابلت" إلى شريط الإعدادات السريعة: اسحب الشريط للأسفل ← تعديل الأزرار (القلم) ← اسحب "فتح التابلت" للأعلى. بعدها اضغطها (حتى من شاشة القفل) ← بصمة ← يُفتح التابلت.</string>
+    <string name="tile_test">تجربة الفتح من هنا</string>
 </resources>

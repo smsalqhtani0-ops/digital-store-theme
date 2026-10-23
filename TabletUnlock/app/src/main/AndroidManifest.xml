@@ -46,6 +46,25 @@
             android:showOnLockScreen="true"
             android:theme="@style/Theme.TabletUnlock" />
 
+        <activity
+            android:name=".biometric.PhoneInitiateActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:showOnLockScreen="true"
+            android:theme="@style/Theme.TabletUnlock" />
+
+        <service
+            android:name=".tile.UnlockTileService"
+            android:exported="true"
+            android:icon="@android:drawable/ic_lock_idle_lock"
+            android:label="فتح التابلت"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <service
             android:name=".service.PhoneUnlockService"
             android:exported="false"

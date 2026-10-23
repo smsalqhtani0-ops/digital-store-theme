@@ -39,6 +39,7 @@ data class TabletUiState(
     // المرحلة 3: الفتح من الجوال بالبصمة
     val remoteBusy: Boolean = false,
     val remoteLog: List<String> = emptyList(),
+    val receiveEnabled: Boolean = false,
 )
 
 class TabletViewModel(app: Application) : AndroidViewModel(app) {
@@ -60,6 +61,7 @@ class TabletViewModel(app: Application) : AndroidViewModel(app) {
             method = prefs.unlockMethod,
             paired = pairingStore.paired,
             pairedPhoneName = pairingStore.peerServiceName,
+            receiveEnabled = prefs.receiveFromPhoneEnabled,
         ),
     )
     val ui: StateFlow<TabletUiState> = _ui.asStateFlow()
@@ -154,7 +156,14 @@ class TabletViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setAuto(enabled: Boolean) {
         prefs.autoUnlockEnabled = enabled
-        if (enabled) TabletAutoService.start(getApplication()) else TabletAutoService.stop(getApplication())
+        _ui.update { it.copy(receiveEnabled = prefs.receiveFromPhoneEnabled) }
+        TabletAutoService.reconcile(getApplication())
+    }
+
+    fun setReceive(enabled: Boolean) {
+        prefs.receiveFromPhoneEnabled = enabled
+        _ui.update { it.copy(receiveEnabled = enabled) }
+        TabletAutoService.reconcile(getApplication())
     }
 
     /** يقفل الشاشة، ينتظر 5 ثوانٍ، ثم يفتح بالرمز المحفوظ. يُستخدم للاختبار المحلي والفتح من الجوال. */

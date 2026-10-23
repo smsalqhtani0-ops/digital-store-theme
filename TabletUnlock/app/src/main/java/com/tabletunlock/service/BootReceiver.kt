@@ -13,7 +13,7 @@ class BootReceiver : BroadcastReceiver() {
         val prefs = AppPrefs(context)
         when (prefs.mode) {
             AppMode.PHONE -> if (prefs.listeningEnabled) PhoneUnlockService.start(context)
-            AppMode.TABLET -> if (prefs.autoUnlockEnabled) TabletAutoService.start(context)
+            AppMode.TABLET -> if (prefs.autoUnlockEnabled || prefs.receiveFromPhoneEnabled) TabletAutoService.start(context)
             null -> Unit
         }
     }

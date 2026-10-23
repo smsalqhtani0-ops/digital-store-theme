@@ -159,6 +159,19 @@ fun PhoneScreen(onChangeMode: () -> Unit, vm: PhoneViewModel = viewModel()) {
                     }
                     log.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
                 }
+
+                SectionCard(stringResource(R.string.tile_title)) {
+                    Text(stringResource(R.string.tile_desc), style = MaterialTheme.typography.bodyMedium)
+                    Button(
+                        onClick = {
+                            context.startActivity(
+                                Intent(context, com.tabletunlock.biometric.PhoneInitiateActivity::class.java)
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(stringResource(R.string.tile_test)) }
+                }
             }
         }
     }

@@ -36,10 +36,15 @@ class AppPrefs(context: Context) {
         get() = prefs.getBoolean(KEY_LISTEN, false)
         set(value) = prefs.edit().putBoolean(KEY_LISTEN, value).apply()
 
+    var receiveFromPhoneEnabled: Boolean
+        get() = prefs.getBoolean(KEY_RECEIVE, false)
+        set(value) = prefs.edit().putBoolean(KEY_RECEIVE, value).apply()
+
     private companion object {
         const val KEY_MODE = "mode"
         const val KEY_METHOD = "unlock_method"
         const val KEY_AUTO = "auto_unlock"
         const val KEY_LISTEN = "listening"
+        const val KEY_RECEIVE = "receive_from_phone"
     }
 }

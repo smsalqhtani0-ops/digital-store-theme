@@ -10,6 +10,7 @@ data class PairingPayload(
     val secret: String,
     val tabletPublicKey: String,
     val tabletBtName: String?,
+    val tabletServiceName: String,
 ) {
     fun encode(): String = JSONObject().apply {
         put("v", version)
@@ -18,6 +19,7 @@ data class PairingPayload(
         put("secret", secret)
         put("tpk", tabletPublicKey)
         put("tbt", tabletBtName ?: "")
+        put("tsn", tabletServiceName)
     }.toString()
 
     companion object {
@@ -32,6 +34,7 @@ data class PairingPayload(
                 secret = json.getString("secret"),
                 tabletPublicKey = json.getString("tpk"),
                 tabletBtName = json.optString("tbt").ifBlank { null },
+                tabletServiceName = json.getString("tsn"),
             )
         } catch (e: Exception) {
             null

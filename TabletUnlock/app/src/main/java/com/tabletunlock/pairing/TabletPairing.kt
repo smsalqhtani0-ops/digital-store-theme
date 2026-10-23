@@ -41,7 +41,7 @@ class TabletPairing(context: Context) {
             server.soTimeout = PAIRING_TIMEOUT_MS
 
             val btName = Bt.ownName(appContext)
-            val payload = PairingPayload(PairingPayload.VERSION, host, server.localPort, secret, tabletPublic, btName)
+            val payload = PairingPayload(PairingPayload.VERSION, host, server.localPort, secret, tabletPublic, btName, store.ownServiceName())
 
             Thread {
                 try {

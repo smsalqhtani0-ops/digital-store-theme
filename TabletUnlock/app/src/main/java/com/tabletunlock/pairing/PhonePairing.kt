@@ -40,6 +40,7 @@ class PhonePairing(context: Context) {
                 }
                 store.peerPublicKey = payload.tabletPublicKey
                 store.peerBtName = payload.tabletBtName
+                store.peerServiceName = payload.tabletServiceName
                 kotlin.Result.success(Unit)
             }
         } catch (e: Exception) {
