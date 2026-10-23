@@ -23,7 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.journeyapps.barcodescanner.ScanContract
@@ -38,6 +40,17 @@ fun PhoneScreen(onChangeMode: () -> Unit, vm: PhoneViewModel = viewModel()) {
 
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         result.contents?.let(vm::onScanned)
+    }
+    val notifLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { vm.toggleListening() }
+
+    fun onToggleListening() {
+        if (!ui.listening && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notifLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            vm.toggleListening()
+        }
     }
 
     Scaffold(
@@ -84,7 +97,7 @@ fun PhoneScreen(onChangeMode: () -> Unit, vm: PhoneViewModel = viewModel()) {
                         Text(stringResource(R.string.phone_need_pair))
                     } else {
                         Text(stringResource(R.string.listen_desc), style = MaterialTheme.typography.bodyMedium)
-                        Button(onClick = vm::toggleListening, modifier = Modifier.fillMaxWidth()) {
+                        Button(onClick = { onToggleListening() }, modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 stringResource(
                                     if (ui.listening) R.string.listen_stop else R.string.listen_start,

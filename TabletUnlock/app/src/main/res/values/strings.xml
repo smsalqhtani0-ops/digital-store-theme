@@ -61,4 +61,14 @@
     <string name="listen_start">بدء الاستماع</string>
     <string name="listen_stop">إيقاف الاستماع</string>
     <string name="phone_need_pair">اقترن مع التابلت أولاً بمسح الرمز الذي يعرضه.</string>
+
+    <string name="notif_channel_name">طلبات الفتح</string>
+    <string name="notif_channel_desc">إشعار عند طلب التابلت فتح القفل</string>
+    <string name="notif_title">طلب فتح التابلت</string>
+    <string name="notif_text">اضغط وضع بصمتك للموافقة على فتح التابلت.</string>
+
+    <string name="remote_title">فتح التابلت من الجوال</string>
+    <string name="remote_desc">يرسل طلباً للجوال، وعند وضع بصمتك هناك يُقفل التابلت ثم يُفتح تلقائياً. أبقِ الجوال في وضع الاستماع.</string>
+    <string name="remote_button">طلب الفتح من الجوال</string>
+    <string name="remote_running">بانتظار الجوال…</string>
 </resources>

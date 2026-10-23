@@ -110,6 +110,12 @@ fun TabletScreen(onChangeMode: () -> Unit, vm: TabletViewModel = viewModel()) {
                     log = ui.connLog,
                     onRun = vm::testConnection,
                 )
+                RemoteUnlockSection(
+                    canRun = ui.paired && shizuku == ShizukuState.READY && ui.hasPin && !ui.busy && !ui.remoteBusy,
+                    busy = ui.remoteBusy,
+                    log = ui.remoteLog,
+                    onRun = vm::requestRemoteUnlock,
+                )
             }
         }
     }
@@ -331,6 +337,22 @@ private fun ConnSection(
         Text(stringResource(R.string.conn_desc), style = MaterialTheme.typography.bodyMedium)
         Button(onClick = onRun, enabled = canRun, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(if (busy) R.string.conn_running else R.string.conn_button))
+        }
+        log.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+    }
+}
+
+@Composable
+private fun RemoteUnlockSection(
+    canRun: Boolean,
+    busy: Boolean,
+    log: List<String>,
+    onRun: () -> Unit,
+) {
+    SectionCard(stringResource(R.string.remote_title)) {
+        Text(stringResource(R.string.remote_desc), style = MaterialTheme.typography.bodyMedium)
+        Button(onClick = onRun, enabled = canRun, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(if (busy) R.string.remote_running else R.string.remote_button))
         }
         log.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
     }

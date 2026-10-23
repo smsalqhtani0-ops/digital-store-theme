@@ -34,6 +34,9 @@ data class TabletUiState(
     val qrContent: String? = null,
     val connBusy: Boolean = false,
     val connLog: List<String> = emptyList(),
+    // المرحلة 3: الفتح من الجوال بالبصمة
+    val remoteBusy: Boolean = false,
+    val remoteLog: List<String> = emptyList(),
 )
 
 class TabletViewModel(app: Application) : AndroidViewModel(app) {
@@ -120,57 +123,82 @@ class TabletViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun runTest() {
-        if (_ui.value.busy) return
+        if (_ui.value.busy || _ui.value.remoteBusy) return
         _ui.update { it.copy(busy = true, log = emptyList()) }
-
         viewModelScope.launch {
-            val wakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "TabletUnlock:test")
-            wakeLock.acquire(60_000)
-            var pin: CharArray? = null
-            try {
-                pin = pinStore.load()
-                if (pin == null) {
-                    log("تعذّر قراءة الرمز المحفوظ. احذفه وأدخله من جديد.")
-                    return@launch
-                }
+            performUnlockSequence { line -> log(line) }
+            _ui.update { it.copy(busy = false, countdown = 0) }
+        }
+    }
 
-                log("قفل الشاشة (keyevent 223)…")
-                val lock = controller.lockScreen()
-                if (!lock.ok) {
-                    log("فشل القفل: ${lock.error.ifBlank { "exit=${lock.exitCode}" }}")
-                    return@launch
+    fun requestRemoteUnlock() {
+        if (_ui.value.busy || _ui.value.remoteBusy) return
+        _ui.update { it.copy(remoteBusy = true, remoteLog = emptyList()) }
+        viewModelScope.launch {
+            val outcome = client.requestUnlock { line -> remoteLog(line) }
+            when (outcome) {
+                TabletClient.UnlockOutcome.Approved -> {
+                    remoteLog("✅ وافق الجوال بالبصمة. يُنفَّذ الفتح الآن…")
+                    performUnlockSequence { line -> remoteLog(line) }
                 }
-
-                for (seconds in 5 downTo 1) {
-                    _ui.update { it.copy(countdown = seconds) }
-                    delay(1000)
-                }
-                _ui.update { it.copy(countdown = 0) }
-
-                log(if (controller.isScreenOn) "تنبيه: الشاشة ما زالت تعمل." else "الشاشة مطفأة ✓")
-                if (!controller.isLocked) {
-                    log("تنبيه: الجهاز غير مقفل بعد. فعّل \"القفل الفوري بزر التشغيل\" في إعدادات الأمان.")
-                }
-
-                val result = controller.unlock(pin, _ui.value.method) { log(it) }
-                log(
-                    when (result) {
-                        UnlockResult.Success -> "✅ نجح الفتح."
-                        UnlockResult.AlreadyUnlocked -> "الجهاز لم يكن مقفلاً، فلم يُدخَل الرمز."
-                        UnlockResult.StillLocked ->
-                            "❌ أُرسلت الأوامر لكن الجهاز ما زال مقفلاً. جرّب الطريقة الأخرى لإظهار لوحة الرمز."
-                        is UnlockResult.Failed -> "❌ فشلت خطوة \"${result.step}\": ${result.error}"
-                    },
-                )
-            } finally {
-                pin?.fill('\u0000')
-                if (wakeLock.isHeld) wakeLock.release()
-                _ui.update { it.copy(busy = false, countdown = 0) }
+                is TabletClient.UnlockOutcome.Rejected -> remoteLog("❌ ${outcome.message}")
+                is TabletClient.UnlockOutcome.Failed -> remoteLog("❌ ${outcome.message}")
             }
+            _ui.update { it.copy(remoteBusy = false, countdown = 0) }
+        }
+    }
+
+    /** يقفل الشاشة، ينتظر 5 ثوانٍ، ثم يفتح بالرمز المحفوظ. يُستخدم للاختبار المحلي والفتح من الجوال. */
+    private suspend fun performUnlockSequence(onLog: (String) -> Unit) {
+        val wakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "TabletUnlock:unlock")
+        wakeLock.acquire(60_000)
+        var pin: CharArray? = null
+        try {
+            pin = pinStore.load()
+            if (pin == null) {
+                onLog("تعذّر قراءة الرمز المحفوظ. احذفه وأدخله من جديد.")
+                return
+            }
+
+            onLog("قفل الشاشة (keyevent 223)…")
+            val lock = controller.lockScreen()
+            if (!lock.ok) {
+                onLog("فشل القفل: ${lock.error.ifBlank { "exit=${lock.exitCode}" }}")
+                return
+            }
+
+            for (seconds in 5 downTo 1) {
+                _ui.update { it.copy(countdown = seconds) }
+                delay(1000)
+            }
+            _ui.update { it.copy(countdown = 0) }
+
+            onLog(if (controller.isScreenOn) "تنبيه: الشاشة ما زالت تعمل." else "الشاشة مطفأة ✓")
+            if (!controller.isLocked) {
+                onLog("تنبيه: الجهاز غير مقفل بعد. فعّل \"القفل الفوري بزر التشغيل\".")
+            }
+
+            val result = controller.unlock(pin, _ui.value.method) { onLog(it) }
+            onLog(
+                when (result) {
+                    UnlockResult.Success -> "✅ نجح الفتح."
+                    UnlockResult.AlreadyUnlocked -> "الجهاز لم يكن مقفلاً، فلم يُدخَل الرمز."
+                    UnlockResult.StillLocked ->
+                        "❌ أُرسلت الأوامر لكن الجهاز ما زال مقفلاً. جرّب الطريقة الأخرى."
+                    is UnlockResult.Failed -> "❌ فشلت خطوة \"${result.step}\": ${result.error}"
+                },
+            )
+        } finally {
+            pin?.fill('\u0000')
+            if (wakeLock.isHeld) wakeLock.release()
         }
     }
 
     private fun log(line: String) {
         _ui.update { it.copy(log = it.log + line) }
+    }
+
+    private fun remoteLog(line: String) {
+        _ui.update { it.copy(remoteLog = it.remoteLog + line) }
     }
 }
