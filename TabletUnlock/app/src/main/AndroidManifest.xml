@@ -55,6 +55,14 @@
             android:theme="@style/Theme.TabletUnlock" />
 
         <receiver
+            android:name=".widget.UnlockTriggerReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.tabletunlock.action.TRIGGER_UNLOCK" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".widget.UnlockWidgetProvider"
             android:exported="false"
             android:label="@string/widget_label">
