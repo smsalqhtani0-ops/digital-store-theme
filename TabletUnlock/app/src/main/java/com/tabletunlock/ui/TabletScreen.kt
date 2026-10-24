@@ -298,9 +298,7 @@ private fun TestSection(
                 },
             )
         }
-        log.forEach { line ->
-            Text(line, style = MaterialTheme.typography.bodySmall)
-        }
+        StatusBlock(log)
     }
 }
 
@@ -365,7 +363,7 @@ private fun ConnSection(
         Button(onClick = onRun, enabled = canRun, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(if (busy) R.string.conn_running else R.string.conn_button))
         }
-        log.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+        StatusBlock(log)
     }
 }
 
@@ -381,7 +379,7 @@ private fun RemoteUnlockSection(
         Button(onClick = onRun, enabled = canRun, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(if (busy) R.string.remote_running else R.string.remote_button))
         }
-        log.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+        StatusBlock(log)
     }
 }
 

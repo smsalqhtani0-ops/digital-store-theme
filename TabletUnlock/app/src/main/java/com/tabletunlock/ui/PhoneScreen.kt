@@ -157,7 +157,7 @@ fun PhoneScreen(onChangeMode: () -> Unit, vm: PhoneViewModel = viewModel()) {
                             }) { Text(stringResource(R.string.overlay_grant)) }
                         }
                     }
-                    log.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    StatusBlock(log)
                 }
 
                 SectionCard(stringResource(R.string.tile_title)) {
