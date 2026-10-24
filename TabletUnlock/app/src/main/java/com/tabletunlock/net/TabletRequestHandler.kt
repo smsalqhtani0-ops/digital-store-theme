@@ -5,6 +5,8 @@ import com.tabletunlock.crypto.SigningKeys
 import com.tabletunlock.data.AppMode
 import com.tabletunlock.data.AppPrefs
 import com.tabletunlock.data.PairingStore
+import com.tabletunlock.data.TabletLockMode
+import com.tabletunlock.lock.AppLockState
 import com.tabletunlock.security.PinStore
 import com.tabletunlock.shizuku.ShizukuManager
 import com.tabletunlock.shizuku.ShizukuState
@@ -56,6 +58,14 @@ class TabletRequestHandler(context: Context) : RequestHandler {
 
             if (type != "unlock_now") {
                 Wire.send(link.writer, reject("unsupported"))
+                return
+            }
+
+            // وضع قفل التطبيق (بدون Shizuku): نرفع شاشة القفل بدل إدخال الرمز.
+            if (prefs.lockMode == TabletLockMode.APP_LOCK) {
+                AppLockState.signalUnlock()
+                onLog("طلب فتح موثّق من الجوال عبر ${link.transport} — رُفع القفل ✓")
+                Wire.send(link.writer, JSONObject().put("ok", true).put("status", "فُتح التابلت ✓"))
                 return
             }
 

@@ -12,6 +12,8 @@ import androidx.core.app.ServiceCompat
 import com.tabletunlock.data.AppMode
 import com.tabletunlock.data.AppPrefs
 import com.tabletunlock.data.PairingStore
+import com.tabletunlock.data.TabletLockMode
+import com.tabletunlock.lock.AppLockActivity
 import com.tabletunlock.net.TabletRequestHandler
 import com.tabletunlock.net.TransportListener
 import com.tabletunlock.unlock.AutoUnlocker
@@ -36,7 +38,13 @@ class TabletAutoService : Service() {
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == Intent.ACTION_SCREEN_ON) {
+            if (intent.action != Intent.ACTION_SCREEN_ON) return
+            if (prefs.lockMode == TabletLockMode.APP_LOCK) {
+                context.startActivity(
+                    Intent(context, AppLockActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                )
+            } else {
                 scope.launch { unlocker.attempt { setStatus(it) } }
             }
         }
@@ -48,11 +56,11 @@ class TabletAutoService : Service() {
         unlocker = AutoUnlocker(this)
         startInForeground()
 
-        if (prefs.autoUnlockEnabled) {
+        if (prefs.autoUnlockEnabled || prefs.lockMode == TabletLockMode.APP_LOCK) {
             registerReceiver(screenReceiver, IntentFilter(Intent.ACTION_SCREEN_ON))
             receiverRegistered = true
         }
-        if (prefs.receiveFromPhoneEnabled) {
+        if (prefs.receiveFromPhoneEnabled || prefs.lockMode == TabletLockMode.APP_LOCK) {
             val serviceName = PairingStore(this, AppMode.TABLET).ownServiceName()
             listener = TransportListener(this, serviceName, TabletRequestHandler(this)).also {
                 it.start(scope) { line -> setStatus(line) }
@@ -110,7 +118,9 @@ class TabletAutoService : Service() {
         fun reconcile(context: Context) {
             val prefs = AppPrefs(context)
             stop(context)
-            if (prefs.autoUnlockEnabled || prefs.receiveFromPhoneEnabled) {
+            if (prefs.autoUnlockEnabled || prefs.receiveFromPhoneEnabled ||
+                prefs.lockMode == TabletLockMode.APP_LOCK
+            ) {
                 start(context)
             }
         }

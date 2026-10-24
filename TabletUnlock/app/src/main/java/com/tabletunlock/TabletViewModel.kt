@@ -7,7 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.tabletunlock.data.AppMode
 import com.tabletunlock.data.AppPrefs
 import com.tabletunlock.data.PairingStore
+import com.tabletunlock.data.TabletLockMode
 import com.tabletunlock.data.UnlockMethod
+import com.tabletunlock.lock.AppLockManager
 import com.tabletunlock.net.TabletClient
 import com.tabletunlock.pairing.TabletPairing
 import com.tabletunlock.security.PinStore
@@ -40,6 +42,8 @@ data class TabletUiState(
     val remoteBusy: Boolean = false,
     val remoteLog: List<String> = emptyList(),
     val receiveEnabled: Boolean = false,
+    val lockMode: TabletLockMode = TabletLockMode.SHIZUKU,
+    val adminActive: Boolean = false,
 )
 
 class TabletViewModel(app: Application) : AndroidViewModel(app) {
@@ -62,6 +66,8 @@ class TabletViewModel(app: Application) : AndroidViewModel(app) {
             paired = pairingStore.paired,
             pairedPhoneName = pairingStore.peerServiceName,
             receiveEnabled = prefs.receiveFromPhoneEnabled,
+            lockMode = prefs.lockMode,
+            adminActive = AppLockManager.isAdminActive(app),
         ),
     )
     val ui: StateFlow<TabletUiState> = _ui.asStateFlow()
@@ -164,6 +170,20 @@ class TabletViewModel(app: Application) : AndroidViewModel(app) {
         prefs.receiveFromPhoneEnabled = enabled
         _ui.update { it.copy(receiveEnabled = enabled) }
         TabletAutoService.reconcile(getApplication())
+    }
+
+    fun setLockMode(mode: TabletLockMode) {
+        prefs.lockMode = mode
+        _ui.update { it.copy(lockMode = mode) }
+        TabletAutoService.reconcile(getApplication())
+    }
+
+    fun refreshAdmin() {
+        _ui.update { it.copy(adminActive = AppLockManager.isAdminActive(getApplication())) }
+    }
+
+    fun lockNowApp() {
+        AppLockManager.lockNow(getApplication())
     }
 
     /** يقفل الشاشة، ينتظر 5 ثوانٍ، ثم يفتح بالرمز المحفوظ. يُستخدم للاختبار المحلي والفتح من الجوال. */

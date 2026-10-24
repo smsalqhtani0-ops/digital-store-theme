@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.tabletunlock.data.AppMode
 import com.tabletunlock.data.AppPrefs
+import com.tabletunlock.data.TabletLockMode
 
 /** يعيد تشغيل الخدمات بعد إقلاع الجهاز إن كانت مفعّلة. */
 class BootReceiver : BroadcastReceiver() {
@@ -13,7 +14,7 @@ class BootReceiver : BroadcastReceiver() {
         val prefs = AppPrefs(context)
         when (prefs.mode) {
             AppMode.PHONE -> if (prefs.listeningEnabled) PhoneUnlockService.start(context)
-            AppMode.TABLET -> if (prefs.autoUnlockEnabled || prefs.receiveFromPhoneEnabled) TabletAutoService.start(context)
+            AppMode.TABLET -> if (prefs.autoUnlockEnabled || prefs.receiveFromPhoneEnabled || prefs.lockMode == TabletLockMode.APP_LOCK) TabletAutoService.start(context)
             null -> Unit
         }
     }

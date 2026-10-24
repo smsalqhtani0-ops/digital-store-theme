@@ -107,4 +107,13 @@
     <string name="phone_notif_text">اضغط الزر لفتح التابلت ببصمتك.</string>
     <string name="phone_notif_action">فتح التابلت</string>
     <string name="widget_label">فتح التابلت</string>
+
+    <string name="lockmode_title">طريقة القفل</string>
+    <string name="lockmode_shizuku">Shizuku — قفل النظام الحقيقي (أكثر أماناً)</string>
+    <string name="lockmode_applock">قفل التطبيق — بدون Shizuku</string>
+    <string name="lockmode_applock_warn">تنبيه: قفل التطبيق أضعف أماناً من قفل النظام، ومناسب للاستخدام المنزلي. ألغِ رمز قفل النظام في إعدادات التابلت ليعمل بسلاسة.</string>
+    <string name="admin_enable">تفعيل مشرف الجهاز (مطلوب للقفل)</string>
+    <string name="admin_active">مشرف الجهاز مُفعّل ✓</string>
+    <string name="admin_explain">يُستخدم لقفل شاشة التابلت فقط.</string>
+    <string name="lock_now">قفل الآن</string>
 </resources>

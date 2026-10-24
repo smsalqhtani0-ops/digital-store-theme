@@ -5,6 +5,9 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.ui.platform.LocalContext
+import com.tabletunlock.data.TabletLockMode
+import com.tabletunlock.lock.AppLockManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -62,7 +65,10 @@ fun TabletScreen(onChangeMode: () -> Unit, vm: TabletViewModel = viewModel()) {
     val autoRunning by vm.autoRunning.collectAsStateWithLifecycle()
     val autoStatus by vm.autoStatus.collectAsStateWithLifecycle()
 
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshShizuku() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        vm.refreshShizuku()
+        vm.refreshAdmin()
+    }
 
     val btLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -142,6 +148,12 @@ fun TabletScreen(onChangeMode: () -> Unit, vm: TabletViewModel = viewModel()) {
                     enabled = ui.paired && ui.hasPin,
                     on = ui.receiveEnabled,
                     onToggle = vm::setReceive,
+                )
+                LockModeSection(
+                    mode = ui.lockMode,
+                    adminActive = ui.adminActive,
+                    onSelect = vm::setLockMode,
+                    onLockNow = vm::lockNowApp,
                 )
             }
         }
@@ -438,5 +450,58 @@ private fun ReceiveSection(
             stringResource(if (on) R.string.receive_on else R.string.receive_off),
             color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
         )
+    }
+}
+
+@Composable
+private fun LockModeSection(
+    mode: TabletLockMode,
+    adminActive: Boolean,
+    onSelect: (TabletLockMode) -> Unit,
+    onLockNow: () -> Unit,
+) {
+    val context = LocalContext.current
+    SectionCard(stringResource(R.string.lockmode_title)) {
+        LockModeOption(R.string.lockmode_shizuku, mode == TabletLockMode.SHIZUKU) {
+            onSelect(TabletLockMode.SHIZUKU)
+        }
+        LockModeOption(R.string.lockmode_applock, mode == TabletLockMode.APP_LOCK) {
+            onSelect(TabletLockMode.APP_LOCK)
+        }
+        if (mode == TabletLockMode.APP_LOCK) {
+            Text(
+                stringResource(R.string.lockmode_applock_warn),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            if (adminActive) {
+                Text(stringResource(R.string.admin_active), color = MaterialTheme.colorScheme.primary)
+                Button(onClick = onLockNow, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.lock_now))
+                }
+            } else {
+                Button(
+                    onClick = {
+                        context.startActivity(
+                            AppLockManager.enableAdminIntent(context, context.getString(R.string.admin_explain)),
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(stringResource(R.string.admin_enable)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LockModeOption(labelRes: Int, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Text(stringResource(labelRes), modifier = Modifier.padding(start = 8.dp))
     }
 }

@@ -47,6 +47,26 @@
             android:theme="@style/Theme.TabletUnlock" />
 
         <activity
+            android:name=".lock.AppLockActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:showOnLockScreen="true"
+            android:theme="@style/Theme.TabletUnlock" />
+
+        <receiver
+            android:name=".admin.LockAdminReceiver"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+
+        <activity
             android:name=".biometric.PhoneInitiateActivity"
             android:exported="false"
             android:excludeFromRecents="true"
