@@ -1,5 +1,6 @@
 package com.tabletunlock.ui
 
+import android.app.NotificationManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -53,7 +54,11 @@ fun PhoneScreen(onChangeMode: () -> Unit, vm: PhoneViewModel = viewModel()) {
 
     val context = LocalContext.current
     var canOverlay by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { canOverlay = Settings.canDrawOverlays(context) }
+    var canFsi by remember { mutableStateOf(fullScreenAllowed(context)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        canOverlay = Settings.canDrawOverlays(context)
+        canFsi = fullScreenAllowed(context)
+    }
 
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         result.contents?.let(vm::onScanned)
@@ -171,8 +176,30 @@ fun PhoneScreen(onChangeMode: () -> Unit, vm: PhoneViewModel = viewModel()) {
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text(stringResource(R.string.tile_test)) }
+                    if (canFsi) {
+                        Text(
+                            stringResource(R.string.fsi_ok),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    } else {
+                        Text(stringResource(R.string.fsi_needed), style = MaterialTheme.typography.bodySmall)
+                        OutlinedButton(onClick = {
+                            context.startActivity(
+                                Intent(
+                                    Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+                                    Uri.parse("package:" + context.packageName),
+                                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        }) { Text(stringResource(R.string.fsi_grant)) }
+                    }
                 }
             }
         }
     }
+}
+
+private fun fullScreenAllowed(context: android.content.Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
+    return context.getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
 }

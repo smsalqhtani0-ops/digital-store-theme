@@ -116,4 +116,8 @@
     <string name="admin_active">مشرف الجهاز مُفعّل ✓</string>
     <string name="admin_explain">يُستخدم لقفل شاشة التابلت فقط.</string>
     <string name="lock_now">قفل الآن</string>
+
+    <string name="fsi_needed">مهم: فعّل "إشعارات ملء الشاشة" ليظهر طلب البصمة فوق شاشة القفل دون فتح الجوال.</string>
+    <string name="fsi_grant">تفعيل إشعارات ملء الشاشة</string>
+    <string name="fsi_ok">إشعارات ملء الشاشة مُفعّلة ✓ — يظهر طلب الفتح فوق شاشة القفل.</string>
 </resources>
